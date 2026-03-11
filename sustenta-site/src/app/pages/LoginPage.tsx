@@ -1,0 +1,185 @@
+import React from 'react';
+import { motion } from 'motion/react';
+import { Leaf, Mail, Lock, ArrowRight } from 'lucide-react';
+import { auth, googleProvider } from '../../services/firebase';
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signInWithPopup } from 'firebase/auth';
+
+interface LoginPageProps {
+  onLogin: () => void;
+}
+
+export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
+  const [isRegister, setIsRegister] = React.useState(false);
+  const [email, setEmail] = React.useState('');
+  const [password, setPassword] = React.useState('');
+  const [erro, setErro] = React.useState('');
+  const [carregando, setCarregando] = React.useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setErro('');
+    setCarregando(true);
+    try {
+      if (isRegister) {
+        await createUserWithEmailAndPassword(auth, email, password);
+      } else {
+        await signInWithEmailAndPassword(auth, email, password);
+      }
+      onLogin();
+    } catch {
+      setErro('E-mail ou senha inválidos. Tente novamente.');
+    }
+    setCarregando(false);
+  };
+
+  const handleGoogle = async () => {
+    setErro('');
+    setCarregando(true);
+    try {
+      await signInWithPopup(auth, googleProvider);
+      onLogin();
+    } catch {
+      setErro('Erro ao entrar com Google.');
+    }
+    setCarregando(false);
+  };
+
+  return (
+    <div className="min-h-screen flex flex-col md:flex-row bg-slate-50">
+      <div className="hidden md:flex md:w-1/2 bg-emerald-700 p-12 flex-col justify-between relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-96 h-96 bg-emerald-600 rounded-full blur-3xl opacity-20 -mr-20 -mt-20"></div>
+        <div className="absolute bottom-0 left-0 w-96 h-96 bg-emerald-800 rounded-full blur-3xl opacity-30 -ml-20 -mb-20"></div>
+
+        <div className="relative z-10 flex items-center gap-3">
+          <div className="bg-white p-2 rounded-xl">
+            <Leaf className="text-emerald-700 w-6 h-6" />
+          </div>
+          <span className="text-2xl font-bold text-white tracking-tight">Sustenta</span>
+        </div>
+
+        <div className="relative z-10 max-w-md">
+          <motion.h1
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="text-4xl lg:text-5xl font-bold text-white leading-tight mb-6"
+          >
+            Seu companheiro rumo a um mundo mais sustentável.
+          </motion.h1>
+          <p className="text-emerald-100 text-lg">
+            Monitore seus hábitos, reduza seu impacto ambiental e ganhe recompensas por suas ações positivas.
+          </p>
+        </div>
+
+        <div className="relative z-10 flex gap-4 text-emerald-200 text-sm">
+          <span className="cursor-pointer hover:text-white">Sobre nós</span>
+          <span className="cursor-pointer hover:text-white">Privacidade</span>
+          <span className="cursor-pointer hover:text-white">Termos de uso</span>
+        </div>
+      </div>
+
+      <div className="flex-1 flex flex-col justify-center items-center p-6 md:p-12">
+        <div className="w-full max-w-md space-y-8">
+          <div className="text-center md:text-left">
+            <div className="md:hidden flex justify-center mb-6">
+              <div className="bg-emerald-600 p-3 rounded-2xl">
+                <Leaf className="text-white w-8 h-8" />
+              </div>
+            </div>
+            <h2 className="text-3xl font-bold text-slate-900">
+              {isRegister ? 'Crie sua conta' : 'Entrar no Sustenta'}
+            </h2>
+            <p className="text-slate-500 mt-2">
+              {isRegister ? 'Comece sua jornada sustentável hoje mesmo.' : 'Acesse seu painel para acompanhar seu progresso.'}
+            </p>
+          </div>
+
+          {erro && (
+            <div className="bg-red-50 text-red-600 px-4 py-3 rounded-xl text-sm text-center">
+              {erro}
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-slate-700 ml-1">Email</label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                  <Mail className="w-5 h-5" />
+                </div>
+                <input
+                  type="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="block w-full pl-10 pr-3 py-3 bg-white border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all"
+                  placeholder="seu@email.com"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <div className="flex justify-between items-center px-1">
+                <label className="text-sm font-medium text-slate-700">Senha</label>
+                {!isRegister && (
+                  <button type="button" className="text-xs font-semibold text-emerald-600 hover:text-emerald-700">
+                    Esqueceu a senha?
+                  </button>
+                )}
+              </div>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                  <Lock className="w-5 h-5" />
+                </div>
+                <input
+                  type="password"
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="block w-full pl-10 pr-3 py-3 bg-white border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all"
+                  placeholder="••••••••"
+                />
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              disabled={carregando}
+              className="w-full flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-4 rounded-xl transition-all shadow-lg active:scale-95"
+            >
+              {carregando ? 'Aguarde...' : isRegister ? 'Registrar' : 'Entrar'}
+              <ArrowRight className="w-5 h-5" />
+            </button>
+          </form>
+
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-slate-200"></div>
+            </div>
+            <div className="relative flex justify-center text-sm">
+              <span className="px-2 bg-slate-50 text-slate-500">Ou continue com</span>
+            </div>
+          </div>
+
+          <button
+            onClick={handleGoogle}
+            disabled={carregando}
+            className="w-full flex items-center justify-center gap-2 py-3 border border-slate-200 rounded-xl bg-white hover:bg-slate-50 transition-colors font-medium text-slate-700"
+          >
+            <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" className="w-4 h-4" />
+            Google
+          </button>
+
+          <p className="text-center text-slate-600">
+            {isRegister ? 'Já tem uma conta?' : 'Não tem uma conta?'}
+            <button
+              onClick={() => setIsRegister(!isRegister)}
+              className="ml-2 font-bold text-emerald-600 hover:text-emerald-700"
+            >
+              {isRegister ? 'Faça login' : 'Cadastre-se'}
+            </button>
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+};
