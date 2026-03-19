@@ -4,7 +4,7 @@ import { AppLayout } from './app/components/layout/AppLayout';
 import { DashboardPage } from './app/pages/DashboardPage';
 import { ConsumptionPage } from './app/pages/ConsumptionPage';
 import { motion, AnimatePresence } from 'motion/react';
-import { buscarRegistrosMes, calcularNivel } from './services/consumo';
+import { buscarTodosRegistros, calcularNivel } from './services/consumo';
 
 type Page = 'dashboard' | 'consumption' | 'analysis' | 'habits' | 'history' | 'map' | 'reports' | 'profile' | 'education' | 'settings';
 
@@ -27,12 +27,9 @@ export default function App() {
   const [currentPage, setCurrentPage] = React.useState<Page>('dashboard');
   const [nivelInfo, setNivelInfo] = React.useState({ nivel: 1, xpAtual: 0, xpTotal: 1000, nome: 'Iniciante' });
 
-  const hoje = new Date();
-  const mesAtual = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}`;
-
   React.useEffect(() => {
     if (!isAuthenticated) return;
-    buscarRegistrosMes(mesAtual).then(registros => {
+    buscarTodosRegistros().then(registros => {
       const info = calcularNivel(registros.length);
       setNivelInfo({ nivel: info.nivel, xpAtual: info.xpAtual, xpTotal: info.xpTotal, nome: info.nome });
     });

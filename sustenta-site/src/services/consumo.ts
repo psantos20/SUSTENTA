@@ -4,6 +4,7 @@ import { collection, query, where, getDocs } from 'firebase/firestore';
 export interface Registro {
   id: string;
   categoria: 'energia' | 'agua' | 'outro';
+  subcategoria?: string;
   valor: number;
   mes: string;
   descricao: string;
@@ -17,6 +18,14 @@ export async function buscarRegistrosMes(mes: string): Promise<Registro[]> {
     where('uid', '==', user.uid),
     where('mes', '==', mes)
   );
+  const snap = await getDocs(q);
+  return snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Registro));
+}
+
+export async function buscarTodosRegistros(): Promise<Registro[]> {
+  const user = auth.currentUser;
+  if (!user) return [];
+  const q = query(collection(db, 'registros'), where('uid', '==', user.uid));
   const snap = await getDocs(q);
   return snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Registro));
 }

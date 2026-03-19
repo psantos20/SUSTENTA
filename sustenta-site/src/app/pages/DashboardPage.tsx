@@ -1,11 +1,15 @@
 import React from 'react';
 import { Zap, Droplets, Wallet, CheckCircle2, Calendar, AlertCircle, ArrowUpRight, Leaf, Loader2 } from 'lucide-react';
 import { StatCard } from '../components/dashboard/StatCard';
-import { SustainabilityChart, CategoryChart } from '../components/dashboard/SustainabilityChart';
+import { CategoryChart } from '../components/dashboard/SustainabilityChart';
 import { motion } from 'motion/react';
 import { buscarRegistrosMes, calcularNivel } from '../../services/consumo';
 
-export const DashboardPage: React.FC = () => {
+interface DashboardPageProps {
+  onNavigate?: (page: string) => void;
+}
+
+export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
   const hoje = new Date();
   const mesAtual = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}`;
   const [mes, setMes] = React.useState(mesAtual);
@@ -14,6 +18,7 @@ export const DashboardPage: React.FC = () => {
   const [agua, setAgua] = React.useState(0);
   const [outro, setOutro] = React.useState(0);
   const [totalRegistros, setTotalRegistros] = React.useState(0);
+  const [subcategorias, setSubcategorias] = React.useState<Record<string, number>>({});
 
   React.useEffect(() => {
     setCarregando(true);
@@ -22,6 +27,13 @@ export const DashboardPage: React.FC = () => {
       setEnergia(registros.filter(r => r.categoria === 'energia').reduce((s, r) => s + r.valor, 0));
       setAgua(registros.filter(r => r.categoria === 'agua').reduce((s, r) => s + r.valor, 0));
       setOutro(registros.filter(r => r.categoria === 'outro').reduce((s, r) => s + r.valor, 0));
+
+      const subs: Record<string, number> = {};
+      registros.filter(r => r.categoria === 'outro').forEach(r => {
+        const nome = (r as any).subcategoria || 'Outro';
+        subs[nome] = (subs[nome] || 0) + r.valor;
+      });
+      setSubcategorias(subs);
       setCarregando(false);
     });
   }, [mes]);
@@ -29,6 +41,7 @@ export const DashboardPage: React.FC = () => {
   const total = energia + agua + outro;
   const nivel = calcularNivel(totalRegistros);
   const score = Math.min(100, Math.max(0, Math.round(100 - (total / 10))));
+
   const mesLabel = new Date(mes + '-02').toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
 
   return (
@@ -41,14 +54,20 @@ export const DashboardPage: React.FC = () => {
         <div className="flex items-center gap-3">
           <div className="bg-white border border-slate-200 px-4 py-2 rounded-xl flex items-center gap-2 shadow-sm">
             <Calendar className="w-4 h-4 text-slate-400" />
-            <input
-              type="month"
-              value={mes}
-              onChange={e => setMes(e.target.value)}
-              className="text-sm font-semibold text-slate-700 bg-transparent focus:outline-none"
-            />
+            <div className="relative">
+              <span className="text-sm font-semibold text-slate-700 pointer-events-none">{mesLabel}</span>
+              <input
+                type="month"
+                value={mes}
+                onChange={e => setMes(e.target.value)}
+                className="absolute inset-0 opacity-0 cursor-pointer w-full"
+              />
+            </div>
           </div>
-          <button className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 px-6 rounded-xl transition-all shadow-md active:scale-95">
+          <button
+            onClick={() => onNavigate?.('consumption')}
+            className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 px-6 rounded-xl transition-all shadow-md active:scale-95"
+          >
             Registrar Novo Gasto
           </button>
         </div>
@@ -77,7 +96,7 @@ export const DashboardPage: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2 bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
               <h3 className="text-lg font-bold text-slate-900 mb-6">Distribuição de Gastos em {mesLabel}</h3>
-              <CategoryChart energia={energia} agua={agua} outro={outro} />
+              <CategoryChart energia={energia} agua={agua} outro={outro} subcategorias={subcategorias} />
             </div>
 
             <div className="bg-emerald-900 p-6 rounded-2xl shadow-xl relative overflow-hidden flex flex-col justify-between text-white">
@@ -96,7 +115,7 @@ export const DashboardPage: React.FC = () => {
                   Você tem {totalRegistros} registro{totalRegistros !== 1 ? 's' : ''} este mês. Continue registrando para melhorar seu score!
                 </p>
                 <div className="w-full h-2 bg-emerald-800 rounded-full mb-2">
-                  <div className="h-full bg-emerald-400 rounded-full transition-all" style={{ width: `${nivel.xpAtual / nivel.xpTotal * 100}%` }} />
+                  <div className="h-full bg-emerald-400 rounded-full transition-all" style={{ width: `${(nivel.xpAtual / nivel.xpTotal) * 100}%` }} />
                 </div>
                 <p className="text-xs text-emerald-300">{nivel.xpAtual}/{nivel.xpTotal} XP para próximo nível</p>
                 <div className="flex items-end gap-2 mt-4">
@@ -114,7 +133,7 @@ export const DashboardPage: React.FC = () => {
             <div className="space-y-3">
               {energia > 200 && (
                 <div className="flex items-center gap-4 p-4 rounded-xl border border-amber-100 bg-amber-50">
-                  <AlertCircle className="w-5 h-5 text-amber-500" />
+                  <AlertCircle className="w-5 h-5 text-amber-500 shrink-0" />
                   <div>
                     <p className="text-sm font-bold text-slate-800">Energia acima de R$ 200</p>
                     <p className="text-xs text-slate-500">Considere reduzir o uso de aparelhos de alto consumo.</p>
@@ -123,16 +142,25 @@ export const DashboardPage: React.FC = () => {
               )}
               {agua > 100 && (
                 <div className="flex items-center gap-4 p-4 rounded-xl border border-blue-100 bg-blue-50">
-                  <AlertCircle className="w-5 h-5 text-blue-500" />
+                  <AlertCircle className="w-5 h-5 text-blue-500 shrink-0" />
                   <div>
                     <p className="text-sm font-bold text-slate-800">Água acima de R$ 100</p>
                     <p className="text-xs text-slate-500">Verifique possíveis vazamentos e reduza o tempo no banho.</p>
                   </div>
                 </div>
               )}
-              {totalRegistros > 0 && energia <= 200 && agua <= 100 && (
+              {Object.entries(subcategorias).map(([nome, val]) => val > 300 && (
+                <div key={nome} className="flex items-center gap-4 p-4 rounded-xl border border-red-100 bg-red-50">
+                  <ArrowUpRight className="w-5 h-5 text-red-500 shrink-0" />
+                  <div>
+                    <p className="text-sm font-bold text-slate-800">{nome} acima de R$ 300</p>
+                    <p className="text-xs text-slate-500">Este gasto está elevado. Considere revisar.</p>
+                  </div>
+                </div>
+              ))}
+              {totalRegistros > 0 && energia <= 200 && agua <= 100 && Object.values(subcategorias).every(v => v <= 300) && (
                 <div className="flex items-center gap-4 p-4 rounded-xl border border-emerald-100 bg-emerald-50">
-                  <CheckCircle2 className="w-5 h-5 text-emerald-500" />
+                  <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0" />
                   <div>
                     <p className="text-sm font-bold text-slate-800">Tudo dentro da meta! 🎉</p>
                     <p className="text-xs text-slate-500">Seus gastos estão controlados este mês. Continue assim!</p>
