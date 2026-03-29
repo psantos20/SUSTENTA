@@ -3,25 +3,78 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* ─── Variáveis Light ──────────────────────────────────────────────────────── */
 :root {
-  --background: #ffffff;
+  --background: #f8fafc;
   --foreground: #0f172a;
-  --border: rgba(0, 0, 0, 0.1);
-  --radius: 0.625rem;
-  --sidebar: #f8fafc;
-  --sidebar-foreground: #0f172a;
+  --card:        #ffffff;
+  --card-border: #f1f5f9;
+  --border:      rgba(0, 0, 0, 0.08);
+  --muted:       #f1f5f9;
+  --muted-fg:    #64748b;
+  --sidebar-bg:  #ffffff;
   --sidebar-border: #e2e8f0;
+  --header-bg:   #ffffff;
+  --header-border: #e2e8f0;
+  --input-bg:    #f8fafc;
+  --radius:      0.625rem;
 }
 
+/* ─── Variáveis Dark ───────────────────────────────────────────────────────── */
+.dark {
+  --background: #0f172a;
+  --foreground: #f1f5f9;
+  --card:        #1e293b;
+  --card-border: #334155;
+  --border:      rgba(255, 255, 255, 0.08);
+  --muted:       #1e293b;
+  --muted-fg:    #94a3b8;
+  --sidebar-bg:  #1e293b;
+  --sidebar-border: #334155;
+  --header-bg:   #1e293b;
+  --header-border: #334155;
+  --input-bg:    #0f172a;
+}
+
+/* ─── Base ─────────────────────────────────────────────────────────────────── */
 @layer base {
   * {
     box-sizing: border-box;
     margin: 0;
     padding: 0;
   }
+
   body {
     background-color: var(--background);
     color: var(--foreground);
-    font-family: sans-serif;
+    font-family: system-ui, -apple-system, sans-serif;
+    transition: background-color 0.3s ease, color 0.3s ease;
   }
+
+  /* Scrollbar fina */
+  ::-webkit-scrollbar       { width: 4px; height: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 99px; }
+  .dark ::-webkit-scrollbar-thumb { background: #334155; }
+}
+
+/* ─── Utilitários dark mode para classes Tailwind ──────────────────────────── */
+
+/* Backgrounds */
+.dark .dark\:bg-slate-900  { background-color: #0f172a !important; }
+.dark .dark\:bg-slate-800  { background-color: #1e293b !important; }
+.dark .dark\:bg-slate-700  { background-color: #334155 !important; }
+
+/* Textos */
+.dark .dark\:text-slate-100 { color: #f1f5f9 !important; }
+.dark .dark\:text-slate-300 { color: #cbd5e1 !important; }
+.dark .dark\:text-slate-400 { color: #94a3b8 !important; }
+
+/* Bordas */
+.dark .dark\:border-slate-700 { border-color: #334155 !important; }
+
+/* Transição suave global */
+.dark-transition,
+.dark-transition * {
+  transition: background-color 0.25s ease, border-color 0.25s ease, color 0.25s ease;
 }
