@@ -9,16 +9,26 @@ import { ThemeProvider } from './app/contexts/ThemeContext';
 import { motion, AnimatePresence } from 'motion/react';
 import { buscarTodosRegistros, calcularNivel } from './services/consumo';
 import { AnalysisPage } from './app/pages/AnalysisPage';
+import { HabitsPage } from './app/pages/Habitspage';
+import { HistoryPage } from './app/pages/HistoryPage';
+import { MapPage } from './app/pages/MapPage';
+import ReportsPage from './app/pages/ReportsPage';
+import { entrarNoGrupo } from './services/familia';
+
 type Page =
   | 'dashboard' | 'consumption' | 'analysis' | 'habits'
   | 'history' | 'map' | 'reports' | 'profile'
-  | 'education' | 'settings' | 'notifications';
+  | 'education' | 'notifications';
 
 function PageContent({ page, onNavigate }: { page: Page; onNavigate: (p: string) => void }) {
-  if (page === 'dashboard')     return <DashboardPage onNavigate={onNavigate} />;
-  if (page === 'consumption')   return <ConsumptionPage />;
-  if (page === 'profile')       return <ProfilePage />;
-  if (page === 'analysis') return <AnalysisPage />;
+  if (page === 'dashboard')   return <DashboardPage onNavigate={onNavigate} />;
+  if (page === 'consumption') return <ConsumptionPage />;
+  if (page === 'profile')     return <ProfilePage />;
+  if (page === 'analysis')    return <AnalysisPage />;
+  if (page === 'habits')      return <HabitsPage />;
+  if (page === 'history')     return <HistoryPage />;
+  if (page === 'map')         return <MapPage />;
+  if (page === 'reports')     return <ReportsPage />;
 
   return (
     <div className="flex items-center justify-center h-64">
@@ -35,8 +45,10 @@ function PageContent({ page, onNavigate }: { page: Page; onNavigate: (p: string)
 
 export default function App() {
   const [isAuthenticated, setIsAuthenticated] = React.useState(false);
-  const [currentPage, setCurrentPage]         = React.useState<Page>('dashboard');
-  const [nivelInfo, setNivelInfo]             = React.useState({ nivel: 1, xpAtual: 0, xpTotal: 1000, nome: 'Iniciante' });
+  const [currentPage,     setCurrentPage]     = React.useState<Page>('dashboard');
+  const [nivelInfo,       setNivelInfo]       = React.useState({
+    nivel: 1, xpAtual: 0, xpTotal: 1000, nome: 'Iniciante'
+  });
   const [convitePendente, setConvitePendente] = React.useState<string | null>(null);
 
   React.useEffect(() => {

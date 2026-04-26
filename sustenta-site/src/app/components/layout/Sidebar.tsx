@@ -1,7 +1,7 @@
 import React from 'react';
 import {
   LayoutDashboard, Receipt, BarChart3, CheckSquare,
-  MapPin, FileText, User, Settings, Leaf, ChevronRight,
+  MapPin, FileText, User, Leaf, ChevronRight,
   LogOut, BookOpen, Trophy, History as HistoryIcon
 } from 'lucide-react';
 import { clsx, type ClassValue } from 'clsx';
@@ -53,7 +53,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
         { id: 'reports',   label: 'Relatórios',         icon: FileText  },
         { id: 'profile',   label: 'Perfil e Família',   icon: User      },
         { id: 'education', label: 'Educação Ambiental', icon: BookOpen  },
-        { id: 'settings',  label: 'Configurações',      icon: Settings  },
       ],
     },
   ];

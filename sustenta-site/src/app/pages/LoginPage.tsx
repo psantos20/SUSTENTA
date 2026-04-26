@@ -10,6 +10,37 @@ interface LoginPageProps {
   onLogin: () => void;
 }
 
+const getFirebaseErrorMessage = (code: string): string => {
+  switch (code) {
+    case 'auth/popup-blocked':
+      return 'Popup bloqueado pelo navegador. Permita popups para este site e tente novamente.';
+    case 'auth/popup-closed-by-user':
+      return 'Login cancelado. Feche o popup e tente novamente.';
+    case 'auth/unauthorized-domain':
+      return 'Domínio não autorizado. Adicione "localhost" nos domínios autorizados do Firebase.';
+    case 'auth/operation-not-allowed':
+      return 'Login com Google não está habilitado no Firebase.';
+    case 'auth/invalid-api-key':
+      return 'Chave de API inválida. Verifique as configurações do Firebase.';
+    case 'auth/network-request-failed':
+      return 'Erro de conexão. Verifique sua internet e tente novamente.';
+    case 'auth/user-disabled':
+      return 'Esta conta foi desativada.';
+    case 'auth/user-not-found':
+    case 'auth/wrong-password':
+    case 'auth/invalid-credential':
+      return 'E-mail ou senha inválidos.';
+    case 'auth/email-already-in-use':
+      return 'Este e-mail já está cadastrado.';
+    case 'auth/weak-password':
+      return 'A senha precisa ter ao menos 6 caracteres.';
+    case 'auth/too-many-requests':
+      return 'Muitas tentativas. Aguarde alguns minutos e tente novamente.';
+    default:
+      return `Erro inesperado (${code}). Tente novamente.`;
+  }
+};
+
 export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
   const [isRegister, setIsRegister]   = React.useState(false);
   const [step, setStep]               = React.useState(1);
@@ -22,7 +53,6 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
   const [erro, setErro]               = React.useState('');
   const [carregando, setCarregando]   = React.useState(false);
 
-  // Quando o estado muda, limpa a cidade
   React.useEffect(() => {
     setCidade('');
   }, [estado]);
@@ -35,8 +65,9 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
     try {
       await signInWithEmailAndPassword(auth, email, password);
       onLogin();
-    } catch {
-      setErro('E-mail ou senha inválidos.');
+    } catch (error: any) {
+      console.error('Login error:', error.code, error.message);
+      setErro(getFirebaseErrorMessage(error.code));
     }
     setCarregando(false);
   };
@@ -44,8 +75,8 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
   // ─── Cadastro step 1 ─────────────────────────────────────────────────────
   const handleRegisterStep1 = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!nome.trim())     { setErro('Informe seu nome.');              return; }
-    if (!email.trim())    { setErro('Informe seu e-mail.');            return; }
+    if (!nome.trim())        { setErro('Informe seu nome.');                          return; }
+    if (!email.trim())       { setErro('Informe seu e-mail.');                        return; }
     if (password.length < 6) { setErro('A senha precisa ter ao menos 6 caracteres.'); return; }
     setErro('');
     setStep(2);
@@ -69,8 +100,9 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
         criadoEm: new Date().toISOString(),
       });
       onLogin();
-    } catch {
-      setErro('Erro ao criar conta. Verifique os dados e tente novamente.');
+    } catch (error: any) {
+      console.error('Register error:', error.code, error.message);
+      setErro(getFirebaseErrorMessage(error.code));
     }
     setCarregando(false);
   };
@@ -93,8 +125,9 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
         });
       }
       onLogin();
-    } catch {
-      setErro('Erro ao entrar com Google.');
+    } catch (error: any) {
+      console.error('Google login error:', error.code, error.message);
+      setErro(getFirebaseErrorMessage(error.code));
     }
     setCarregando(false);
   };
@@ -190,9 +223,13 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
 
           {/* Erro */}
           {erro && (
-            <div className="bg-red-50 text-red-600 px-4 py-3 rounded-xl text-sm text-center border border-red-100">
+            <motion.div
+              initial={{ opacity: 0, y: -8 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-red-50 text-red-600 px-4 py-3 rounded-xl text-sm text-center border border-red-100"
+            >
               {erro}
-            </div>
+            </motion.div>
           )}
 
           <AnimatePresence mode="wait">
@@ -333,7 +370,6 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
               >
                 <p className="text-sm text-slate-500">Clique no seu estado no mapa:</p>
 
-                {/* MapaBrasil com seleção de estado + cidade integrada */}
                 <MapaBrasil
                   estadoSelecionado={estado}
                   cidadeSelecionada={cidade}
