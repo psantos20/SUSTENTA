@@ -8,13 +8,13 @@ import {
   Copy, Share2, Link, Sun, RefreshCw
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { auth, db } from '../../../../src/services/firebase';
+import { auth, db } from '../../services/firebase';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import {
   updatePassword, EmailAuthProvider, reauthenticateWithCredential,
   sendEmailVerification, reload,
 } from 'firebase/auth';
-import { buscarTodosRegistros, calcularNivel } from '../../../../src/services/consumo';
+import { buscarTodosRegistros, calcularNivel } from '../../services/consumo';
 import MapaBrasil from '../components/MapaBrasil';
 import { useTheme } from '../contexts/ThemeContext';
 import {
@@ -23,7 +23,7 @@ import {
   compartilharWhatsApp, compartilharInstagram,
   compartilharX, compartilharEmail,
   type GrupoFamilia,
-} from '../../../../src/services/familia';
+} from '../../services/familia';
 
 interface UsuarioData {
   nome: string;

@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Leaf, Mail, Lock, ArrowRight, User, Phone } from 'lucide-react';
-import { auth, googleProvider, db } from '../../../../src/services/firebase';
+import { auth, googleProvider, db } from '../../services/firebase';
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signInWithPopup } from 'firebase/auth';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 import MapaBrasil from '../components/MapaBrasil';

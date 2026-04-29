@@ -3,7 +3,7 @@ import { Zap, Droplets, Wallet, CheckCircle2, Calendar, AlertCircle, ArrowUpRigh
 import { StatCard } from '../components/dashboard/StatCard';
 import { CategoryChart } from '../components/dashboard/SustainabilityChart';
 import { motion } from 'motion/react';
-import { buscarRegistrosMes, calcularNivel } from '../../../../src/services/consumo';
+import { buscarRegistrosMes, calcularNivel } from '../../services/consumo';
 
 interface DashboardPageProps {
   onNavigate?: (page: string) => void;

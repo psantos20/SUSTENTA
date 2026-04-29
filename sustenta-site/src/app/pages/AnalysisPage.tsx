@@ -11,10 +11,10 @@ import {
   CartesianGrid, Tooltip, ResponsiveContainer, Cell,
   Legend, PieChart, Pie
 } from 'recharts';
-import { buscarTodosRegistros, type Registro } from '../../../../src/services/consumo';
-import { auth, db } from '../../../../src/services/firebase';
+import { buscarTodosRegistros, type Registro } from '../../services/consumo';
+import { auth, db } from '../../services/firebase';
 import { doc, getDoc } from 'firebase/firestore';
-import { tarifas } from '../../../../src/services/localidades';
+import { tarifas } from '../../services/localidades';
 
 // ─── Dark mode hook ───────────────────────────────────────────────────────────
 function useDarkMode() {

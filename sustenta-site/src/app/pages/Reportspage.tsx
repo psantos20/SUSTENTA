@@ -11,7 +11,7 @@ import {
   ResponsiveContainer, Legend,
 } from 'recharts';
 import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firestore';
-import { auth, db } from '../../../../src/services/firebase';
+import { auth, db } from '../../services/firebase';
 import { useTheme } from '../contexts/ThemeContext';
 import clsx from 'clsx';
 

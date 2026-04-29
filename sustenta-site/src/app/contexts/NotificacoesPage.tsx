@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
-import { auth, db } from '../../../../src/services/firebase';
+import { auth, db } from '../../services/firebase';
 import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firestore';
 
 // ─── Tipos ───────────────────────────────────────────────────────────────────

@@ -6,7 +6,7 @@ import {
   Wallet, Lock
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { auth, db } from '../../../../src/services/firebase';
+import { auth, db } from '../../services/firebase';
 import {
   collection, doc, getDoc, setDoc, updateDoc,
   arrayUnion, arrayRemove, getDocs, query, where, Timestamp

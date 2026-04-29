@@ -9,7 +9,7 @@ import {
   ChevronRight, TrendingDown, Search, Route,
   ExternalLink, ChevronDown, ChevronUp, Clock
 } from 'lucide-react';
-import { auth, db } from '../../../../src/services/firebase';
+import { auth, db } from '../../services/firebase';
 import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firestore';
 
 declare global {

@@ -11,7 +11,7 @@ import {
   Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend
 } from 'recharts';
 import { motion, AnimatePresence } from 'motion/react';
-import { auth, db } from '../../../../src/services/firebase';
+import { auth, db } from '../../services/firebase';
 import {
   collection, query, where, getDocs, deleteDoc, doc
 } from 'firebase/firestore';

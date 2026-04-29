@@ -2,7 +2,7 @@ import React from 'react';
 import { Sidebar } from './Sidebar';
 import { Bell, Leaf, Menu, X, Search, CheckCheck, AlertCircle, Trophy, Calendar, Users } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { auth, db } from '../../../../../src/services/firebase';
+import { auth, db } from '../../../services/firebase';
 import { doc, getDoc } from 'firebase/firestore';
 import { useNotificacoes, type TipoNotificacao } from '../../contexts/NotificacoesPage';
 

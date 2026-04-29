@@ -16,7 +16,7 @@ import {
   collection, query, where, getDocs, doc, getDoc,
   setDoc, updateDoc, arrayUnion, serverTimestamp, orderBy, limit,
 } from 'firebase/firestore';
-import { auth, db } from '../../../../src/services/firebase';
+import { auth, db } from '../../services/firebase';
 import { useTheme } from '../contexts/ThemeContext';
 import clsx from 'clsx';
 

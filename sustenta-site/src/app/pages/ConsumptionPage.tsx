@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Zap, Droplets, Wallet, Plus, CheckCircle2, Loader2, Trash2, Pencil, X, Check, ChevronDown } from 'lucide-react';
-import { db, auth } from '../../../../src/services/firebase';
+import { db, auth } from '../../services/firebase';
 import { collection, addDoc, Timestamp, query, where, getDocs, deleteDoc, doc, updateDoc } from 'firebase/firestore';
 
 const outrasOpcoes = [
