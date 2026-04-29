@@ -202,7 +202,10 @@ export const HabitsPage: React.FC = () => {
   React.useEffect(() => {
     const fetchDados = async () => {
       const user = auth.currentUser;
-      if (!user) return;
+      if (!user) {
+        setCarregando(false);
+        return;
+      }
 
       setCarregando(true);
 
@@ -223,7 +226,7 @@ export const HabitsPage: React.FC = () => {
             xpHabitos: 0,
           };
 
-          await setDoc(doc(db, 'habitos_usuarios', user.uid), inicial);
+          await setDoc(doc(db, 'habitos_usuarios', user.uid), inicial, { merge: true });
           setDados(inicial);
         }
 
@@ -252,7 +255,7 @@ export const HabitsPage: React.FC = () => {
           }
         }
       } catch (e) {
-        console.error(e);
+        console.error('Erro ao carregar hábitos:', e);
       } finally {
         setCarregando(false);
       }
@@ -275,46 +278,57 @@ export const HabitsPage: React.FC = () => {
 
     setSalvando(habito.id);
 
+    const novoProgresso: ProgressoHabito = {
+      habitoId: habito.id,
+      data: dataHoje,
+      xpGanho: habito.pontos,
+    };
+
+    const ontem = new Date();
+    ontem.setDate(ontem.getDate() - 1);
+    const ontemStr = ontem.toISOString().split('T')[0];
+
+    const streakAtual =
+      dados.ultimoRegistro === ontemStr || dados.ultimoRegistro === dataHoje
+        ? dados.streak + (dados.ultimoRegistro === dataHoje ? 0 : 1)
+        : 1;
+
+    const diasAtivosNovos = [...new Set([...dados.diasAtivos, dataHoje])].slice(-7);
+    const novoXP = (dados.xpHabitos || 0) + habito.pontos;
+
+    const dadosAtualizados: DadosUsuarioHabitos = {
+      ...dados,
+      progressoHabitos: [...dados.progressoHabitos, novoProgresso],
+      streak: streakAtual,
+      ultimoRegistro: dataHoje,
+      diasAtivos: diasAtivosNovos,
+      xpHabitos: novoXP,
+    };
+
     try {
-      const novoProgresso: ProgressoHabito = {
-        habitoId: habito.id,
-        data: dataHoje,
-        xpGanho: habito.pontos,
-      };
+      setDados(dadosAtualizados);
 
-      const ontem = new Date();
-      ontem.setDate(ontem.getDate() - 1);
-      const ontemStr = ontem.toISOString().split('T')[0];
-
-      const streakAtual =
-        dados.ultimoRegistro === ontemStr || dados.ultimoRegistro === dataHoje
-          ? dados.streak + (dados.ultimoRegistro === dataHoje ? 0 : 1)
-          : 1;
-
-      const diasAtivosNovos = [...new Set([...dados.diasAtivos, dataHoje])].slice(-7);
-      const novoXP = (dados.xpHabitos || 0) + habito.pontos;
-
-      const dadosAtualizados: Partial<DadosUsuarioHabitos> = {
-        progressoHabitos: [...dados.progressoHabitos, novoProgresso],
-        streak: streakAtual,
-        ultimoRegistro: dataHoje,
-        diasAtivos: diasAtivosNovos,
-        xpHabitos: novoXP,
-      };
-
-      await updateDoc(doc(db, 'habitos_usuarios', user.uid), dadosAtualizados);
-
-      const userSnap = await getDoc(doc(db, 'usuarios', user.uid));
-      const xpAtual = userSnap.data()?.xpHabitos || 0;
-
-      await updateDoc(doc(db, 'usuarios', user.uid), {
-        xpHabitos: xpAtual + habito.pontos,
+      await setDoc(doc(db, 'habitos_usuarios', user.uid), dadosAtualizados, {
+        merge: true,
       });
 
-      setDados((prev) => (prev ? { ...prev, ...dadosAtualizados } : prev));
+      try {
+        const userSnap = await getDoc(doc(db, 'usuarios', user.uid));
+        const xpAtual = userSnap.data()?.xpHabitos || 0;
+
+        await setDoc(
+          doc(db, 'usuarios', user.uid),
+          { xpHabitos: xpAtual + habito.pontos },
+          { merge: true }
+        );
+      } catch (erroPerfil) {
+        console.warn('XP do perfil não foi atualizado, mas o hábito foi salvo:', erroPerfil);
+      }
+
       recarregarNotifs();
     } catch (e) {
-      console.error(e);
+      console.error('Erro ao marcar hábito:', e);
+      setDados(dados);
     } finally {
       setSalvando(null);
     }
@@ -334,23 +348,40 @@ export const HabitsPage: React.FC = () => {
 
     setSalvando(habito.id);
 
+    const novoProgresso = dados.progressoHabitos.filter(
+      (p) => !(p.habitoId === habito.id && p.data === dataHoje)
+    );
+
+    const novoXP = Math.max(0, (dados.xpHabitos || 0) - habito.pontos);
+
+    const dadosAtualizados: DadosUsuarioHabitos = {
+      ...dados,
+      progressoHabitos: novoProgresso,
+      xpHabitos: novoXP,
+    };
+
     try {
-      const novoProgresso = dados.progressoHabitos.filter(
-        (p) => !(p.habitoId === habito.id && p.data === dataHoje)
-      );
+      setDados(dadosAtualizados);
 
-      const novoXP = Math.max(0, (dados.xpHabitos || 0) - habito.pontos);
-
-      await updateDoc(doc(db, 'habitos_usuarios', user.uid), {
-        progressoHabitos: novoProgresso,
-        xpHabitos: novoXP,
+      await setDoc(doc(db, 'habitos_usuarios', user.uid), dadosAtualizados, {
+        merge: true,
       });
 
-      setDados((prev) =>
-        prev ? { ...prev, progressoHabitos: novoProgresso, xpHabitos: novoXP } : prev
-      );
+      try {
+        const userSnap = await getDoc(doc(db, 'usuarios', user.uid));
+        const xpAtual = userSnap.data()?.xpHabitos || 0;
+
+        await setDoc(
+          doc(db, 'usuarios', user.uid),
+          { xpHabitos: Math.max(0, xpAtual - habito.pontos) },
+          { merge: true }
+        );
+      } catch (erroPerfil) {
+        console.warn('XP do perfil não foi atualizado, mas o hábito foi desmarcado:', erroPerfil);
+      }
     } catch (e) {
-      console.error(e);
+      console.error('Erro ao desmarcar hábito:', e);
+      setDados(dados);
     } finally {
       setSalvando(null);
     }
@@ -381,13 +412,15 @@ export const HabitsPage: React.FC = () => {
 
       const novosDesafios = [...dados.progressoDesafios, novoProgresso];
 
-      await updateDoc(doc(db, 'habitos_usuarios', user.uid), {
-        progressoDesafios: novosDesafios,
-      });
+      await setDoc(
+        doc(db, 'habitos_usuarios', user.uid),
+        { progressoDesafios: novosDesafios },
+        { merge: true }
+      );
 
       setDados((prev) => (prev ? { ...prev, progressoDesafios: novosDesafios } : prev));
     } catch (e) {
-      console.error(e);
+      console.error('Erro ao participar do desafio:', e);
     } finally {
       setSalvando(null);
     }
@@ -417,10 +450,14 @@ export const HabitsPage: React.FC = () => {
           : p
       );
 
-      await updateDoc(doc(db, 'habitos_usuarios', user.uid), {
-        progressoDesafios: novosDesafios,
-        xpHabitos: (dados.xpHabitos || 0) + xpGanho,
-      });
+      await setDoc(
+        doc(db, 'habitos_usuarios', user.uid),
+        {
+          progressoDesafios: novosDesafios,
+          xpHabitos: (dados.xpHabitos || 0) + xpGanho,
+        },
+        { merge: true }
+      );
 
       setDados((prev) =>
         prev
@@ -434,7 +471,7 @@ export const HabitsPage: React.FC = () => {
 
       if (concluido) recarregarNotifs();
     } catch (e) {
-      console.error(e);
+      console.error('Erro ao avançar desafio:', e);
     } finally {
       setSalvando(null);
     }
@@ -459,9 +496,11 @@ export const HabitsPage: React.FC = () => {
 
       const novosPersonalizados = [...dados.habitosPersonalizados, novoHabito];
 
-      await updateDoc(doc(db, 'habitos_usuarios', user.uid), {
-        habitosPersonalizados: novosPersonalizados,
-      });
+      await setDoc(
+        doc(db, 'habitos_usuarios', user.uid),
+        { habitosPersonalizados: novosPersonalizados },
+        { merge: true }
+      );
 
       setDados((prev) =>
         prev ? { ...prev, habitosPersonalizados: novosPersonalizados } : prev
@@ -472,7 +511,7 @@ export const HabitsPage: React.FC = () => {
       setNovoPontos('20');
       setModalHabito(false);
     } catch (e) {
-      console.error(e);
+      console.error('Erro ao criar hábito:', e);
     } finally {
       setSalvando(null);
     }
@@ -678,7 +717,8 @@ export const HabitsPage: React.FC = () => {
                 })}
               </div>
             </div>
-                        <div className="space-y-6">
+
+            <div className="space-y-6">
               <div className="bg-emerald-700 p-6 rounded-3xl shadow-xl shadow-emerald-200/30 text-white relative overflow-hidden">
                 <div className="absolute top-0 right-0 -mr-8 -mt-8 w-32 h-32 bg-emerald-600 rounded-full blur-2xl opacity-50" />
 
@@ -1064,7 +1104,8 @@ export const HabitsPage: React.FC = () => {
           </motion.div>
         )}
       </AnimatePresence>
-            <AnimatePresence>
+
+      <AnimatePresence>
         {habitoDetalhe && (
           <>
             <motion.div
