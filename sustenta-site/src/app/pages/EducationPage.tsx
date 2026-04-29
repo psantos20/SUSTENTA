@@ -129,7 +129,7 @@ async function buscarNoticiaCache(categoriaId: string): Promise<Noticia[] | null
 async function salvarNoticiaCache(categoriaId: string, noticias: Noticia[]) {
   try {
     await setDoc(doc(db, 'noticias_cache', categoriaId), { noticias, cachadoEm: Date.now() });
-  } catch {}
+  } catch { }
 }
 
 async function buscarNoticias(categoria: typeof NOTICIAS_CATEGORIAS[0]): Promise<Noticia[]> {
@@ -235,23 +235,24 @@ const DESAFIOS_SEMANA = [
 ];
 
 const CARBON_FACTORS = { energia: 0.083, agua: 0.021, outro: 0.045 };
-const MESES_SHORT = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
-const MESES_FULL  = ['Janeiro','Fevereiro','Marco','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+const MESES_SHORT = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+const MESES_FULL = ['Janeiro', 'Fevereiro', 'Marco', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
 
 function getMesLabel(m: string, short = false) {
   const [ano, mes] = m.split('-');
-  return short ? `${MESES_SHORT[+mes-1]}/${ano.slice(2)}` : `${MESES_FULL[+mes-1]} ${ano}`;
+  return short ? `${MESES_SHORT[+mes - 1]}/${ano.slice(2)}` : `${MESES_FULL[+mes - 1]} ${ano}`;
 }
 
 function calcularCarbono(registros: Registro[]) {
-  const energiaKg = registros.filter(r=>r.categoria==='energia').reduce((s,r)=>s+r.valor*CARBON_FACTORS.energia,0);
-  const aguaKg    = registros.filter(r=>r.categoria==='agua').reduce((s,r)=>s+r.valor*CARBON_FACTORS.agua,0);
-  const outroKg   = registros.filter(r=>r.categoria==='outro').reduce((s,r)=>s+r.valor*CARBON_FACTORS.outro,0);
-  const totalKg   = energiaKg + aguaKg + outroKg;
-  return { totalKg, energiaKg, aguaKg, outroKg,
-    arvoresTotais: Math.ceil(totalKg/21.7),
-    kmCarro: Math.round(totalKg/0.21),
-    horasAviao: +(totalKg/90).toFixed(1),
+  const energiaKg = registros.filter(r => r.categoria === 'energia').reduce((s, r) => s + r.valor * CARBON_FACTORS.energia, 0);
+  const aguaKg = registros.filter(r => r.categoria === 'agua').reduce((s, r) => s + r.valor * CARBON_FACTORS.agua, 0);
+  const outroKg = registros.filter(r => r.categoria === 'outro').reduce((s, r) => s + r.valor * CARBON_FACTORS.outro, 0);
+  const totalKg = energiaKg + aguaKg + outroKg;
+  return {
+    totalKg, energiaKg, aguaKg, outroKg,
+    arvoresTotais: Math.ceil(totalKg / 21.7),
+    kmCarro: Math.round(totalKg / 0.21),
+    horasAviao: +(totalKg / 90).toFixed(1),
   };
 }
 
@@ -276,10 +277,10 @@ async function carregarProgresso(uid: string): Promise<UserProgress> {
     const snap = await getDoc(doc(db, 'usuarios', uid));
     const data = snap.data();
     return {
-      artigosLidos:     data?.educacao?.artigosLidos     ?? [],
+      artigosLidos: data?.educacao?.artigosLidos ?? [],
       quizzesCompletos: data?.educacao?.quizzesCompletos ?? [],
-      desafiosAceitos:  data?.educacao?.desafiosAceitos  ?? [],
-      xpEducacao:       data?.educacao?.xpEducacao       ?? 0,
+      desafiosAceitos: data?.educacao?.desafiosAceitos ?? [],
+      xpEducacao: data?.educacao?.xpEducacao ?? 0,
     };
   } catch { return { artigosLidos: [], quizzesCompletos: [], desafiosAceitos: [], xpEducacao: 0 }; }
 }
@@ -341,7 +342,7 @@ function Confetti({ active }: { active: boolean }) {
   if (!active) return null;
   const particles = Array.from({ length: 18 }, (_, i) => ({
     x: Math.random() * 100, delay: Math.random() * 0.4,
-    color: ['#22c55e','#eab308','#3b82f6','#a78bfa','#f97316'][i % 5],
+    color: ['#22c55e', '#eab308', '#3b82f6', '#a78bfa', '#f97316'][i % 5],
     size: 4 + Math.random() * 6,
   }));
   return (
@@ -369,7 +370,7 @@ function TabBtn({ label, icon: Icon, active, onClick, badge }: {
       className={clsx(
         'relative flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all whitespace-nowrap',
         active ? 'bg-gradient-to-r from-emerald-600 to-green-600 text-white shadow-lg shadow-emerald-900/40'
-               : 'text-slate-400 hover:text-white hover:bg-white/10'
+          : 'text-slate-400 hover:text-white hover:bg-white/10'
       )}
     >
       <Icon size={15} />
@@ -413,7 +414,7 @@ function DesafioCard({ progress, onAceitarDesafio }: {
               <span className="text-[10px] font-bold text-white/60 uppercase tracking-widest">Desafio do Dia</span>
               <span className="text-[10px] font-bold bg-white/10 text-white/70 px-2 py-0.5 rounded-full">{desafio.tag}</span>
             </div>
-            <p className="font-bold text-white text-sm">{desafio.titulo.replace('Desafio do Dia: ','')}</p>
+            <p className="font-bold text-white text-sm">{desafio.titulo.replace('Desafio do Dia: ', '')}</p>
             <p className="text-xs text-white/60 mt-1 leading-relaxed">{desafio.descricao}</p>
           </div>
         </div>
@@ -426,12 +427,12 @@ function DesafioCard({ progress, onAceitarDesafio }: {
             className={clsx(
               'flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all',
               jaAceito ? 'bg-emerald-600/30 text-emerald-300 border border-emerald-600/40 cursor-default'
-                       : 'bg-white/15 hover:bg-white/25 text-white border border-white/20'
+                : 'bg-white/15 hover:bg-white/25 text-white border border-white/20'
             )}
           >
             {aceitando ? <Loader2 size={11} className="animate-spin" />
               : jaAceito ? <><CheckCircle size={11} /> Aceito!</>
-              : <><Bolt size={11} /> Aceitar</>}
+                : <><Bolt size={11} /> Aceitar</>}
           </motion.button>
         </div>
       </div>
@@ -498,11 +499,11 @@ function ArtigosTab({ progress, onArtigoLido }: {
   progress: UserProgress | null;
   onArtigoLido: (id: string) => void;
 }) {
-  const [catAtiva, setCatAtiva]   = useState(NOTICIAS_CATEGORIAS[0]);
-  const [busca, setBusca]         = useState('');
-  const [noticias, setNoticias]   = useState<Noticia[]>([]);
-  const [loading, setLoading]     = useState(false);
-  const [erro, setErro]           = useState<string | null>(null);
+  const [catAtiva, setCatAtiva] = useState(NOTICIAS_CATEGORIAS[0]);
+  const [busca, setBusca] = useState('');
+  const [noticias, setNoticias] = useState<Noticia[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [erro, setErro] = useState<string | null>(null);
   const [ultimaAtt, setUltimaAtt] = useState<Date | null>(null);
 
   useEffect(() => { carregar(catAtiva); }, [catAtiva]);
@@ -511,7 +512,7 @@ function ArtigosTab({ progress, onArtigoLido }: {
     setLoading(true); setErro(null); setNoticias([]);
     try {
       if (forceRefresh) {
-        try { await setDoc(doc(db, 'noticias_cache', cat.id), { noticias: [], cachadoEm: 0 }); } catch {}
+        try { await setDoc(doc(db, 'noticias_cache', cat.id), { noticias: [], cachadoEm: 0 }); } catch { }
       }
       const resultado = await buscarNoticias(cat);
       setNoticias(resultado);
@@ -722,19 +723,19 @@ function QuizTab({ progress, onQuizCompleto }: {
   progress: UserProgress | null;
   onQuizCompleto: (catId: string, acertos: number, total: number, xp: number) => void;
 }) {
-  const [catSel, setCatSel]     = useState<string | null>(null);
-  const [qIdx, setQIdx]         = useState(0);
-  const [selecionada, setSel]   = useState<number | null>(null);
-  const [acertos, setAcertos]   = useState<boolean[]>([]);
-  const [finalizado, setFin]    = useState(false);
-  const [tempo, setTempo]       = useState(QUIZ_TEMPO);
-  const [shake, setShake]       = useState(false);
+  const [catSel, setCatSel] = useState<string | null>(null);
+  const [qIdx, setQIdx] = useState(0);
+  const [selecionada, setSel] = useState<number | null>(null);
+  const [acertos, setAcertos] = useState<boolean[]>([]);
+  const [finalizado, setFin] = useState(false);
+  const [tempo, setTempo] = useState(QUIZ_TEMPO);
+  const [shake, setShake] = useState(false);
   const [confetti, setConfetti] = useState(false);
-  const [ranking, setRanking]   = useState<RankingEntry[]>([]);
+  const [ranking, setRanking] = useState<RankingEntry[]>([]);
   const [loadingRanking, setLoadingRanking] = useState(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const cat      = QUIZ_CATEGORIAS.find(c => c.id === catSel);
+  const cat = QUIZ_CATEGORIAS.find(c => c.id === catSel);
   const pergunta = cat?.perguntas[qIdx];
   const totalAcertos = acertos.filter(Boolean).length;
   const xpGanho = totalAcertos * 75 + (tempo > 10 ? 25 : 0);
@@ -837,9 +838,9 @@ function QuizTab({ progress, onQuizCompleto }: {
           </div>
           <div className="grid grid-cols-3 gap-3">
             {[
-              { label: 'Acertos', value: totalAcertos,                        color: 'text-emerald-400' },
-              { label: 'Erros',   value: cat.perguntas.length - totalAcertos, color: 'text-red-400'    },
-              { label: 'Score',   value: `${pct}%`,                           color: 'text-blue-400'   },
+              { label: 'Acertos', value: totalAcertos, color: 'text-emerald-400' },
+              { label: 'Erros', value: cat.perguntas.length - totalAcertos, color: 'text-red-400' },
+              { label: 'Score', value: `${pct}%`, color: 'text-blue-400' },
             ].map(s => (
               <div key={s.label} className="rounded-xl p-3 bg-white/5 border border-white/10">
                 <p className={clsx('text-2xl font-black', s.color)}>{s.value}</p>
@@ -873,14 +874,14 @@ function QuizTab({ progress, onQuizCompleto }: {
           ) : (
             <div className="space-y-2">
               {ranking.map((r, i) => {
-                const medals = ['🥇','🥈','🥉'];
+                const medals = ['🥇', '🥈', '🥉'];
                 const isMe = r.uid === auth.currentUser?.uid;
                 return (
                   <div key={r.uid} className={clsx(
                     'flex items-center gap-3 p-2.5 rounded-xl transition-colors',
                     isMe ? 'bg-emerald-600/15 border border-emerald-600/30' : 'hover:bg-white/5'
                   )}>
-                    <span className="text-base w-6 text-center">{medals[i] ?? `#${i+1}`}</span>
+                    <span className="text-base w-6 text-center">{medals[i] ?? `#${i + 1}`}</span>
                     <span className={clsx('text-sm flex-1', isMe ? 'text-emerald-300 font-bold' : 'text-slate-300')}>
                       {r.nome}{isMe ? ' (voce)' : ''}
                     </span>
@@ -939,7 +940,7 @@ function QuizTab({ progress, onQuizCompleto }: {
             <div className="space-y-2">
               {pergunta.ops.map((op, i) => {
                 const resp = selecionada !== null;
-                const isC  = i === pergunta.c;
+                const isC = i === pergunta.c;
                 const isSel = i === selecionada;
                 return (
                   <motion.button key={i} onClick={() => responder(i)} disabled={resp}
@@ -948,7 +949,7 @@ function QuizTab({ progress, onQuizCompleto }: {
                     className={clsx(
                       'w-full text-left px-4 py-3 rounded-xl border text-sm font-medium transition-all flex items-center gap-3',
                       !resp && 'hover:border-emerald-500/60 hover:bg-emerald-600/10 cursor-pointer',
-                      resp && isC  && 'bg-emerald-600/20 border-emerald-500 text-emerald-200',
+                      resp && isC && 'bg-emerald-600/20 border-emerald-500 text-emerald-200',
                       resp && isSel && !isC && 'bg-red-600/20 border-red-500 text-red-200',
                       (!resp || (!isC && !isSel)) && 'bg-white/5 border-white/10 text-slate-300',
                     )}
@@ -957,9 +958,9 @@ function QuizTab({ progress, onQuizCompleto }: {
                       'w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 transition-all',
                       resp && isC ? 'bg-emerald-500 text-white scale-110'
                         : resp && isSel && !isC ? 'bg-red-500 text-white'
-                        : 'bg-white/10 text-slate-400'
+                          : 'bg-white/10 text-slate-400'
                     )}>
-                      {resp ? (isC ? <CheckCircle size={12}/> : isSel ? <XCircle size={12}/> : String.fromCharCode(65+i)) : String.fromCharCode(65+i)}
+                      {resp ? (isC ? <CheckCircle size={12} /> : isSel ? <XCircle size={12} /> : String.fromCharCode(65 + i)) : String.fromCharCode(65 + i)}
                     </span>
                     {op}
                   </motion.button>
@@ -971,13 +972,13 @@ function QuizTab({ progress, onQuizCompleto }: {
               {selecionada !== null && (
                 <motion.div initial={{ opacity: 0, y: 8, height: 0 }} animate={{ opacity: 1, y: 0, height: 'auto' }}
                   className={clsx('rounded-xl p-4 border text-xs leading-relaxed overflow-hidden',
-                    acertos[acertos.length-1]
+                    acertos[acertos.length - 1]
                       ? 'bg-emerald-600/10 border-emerald-600/30 text-emerald-200'
                       : 'bg-slate-700/40 border-white/10 text-slate-300'
                   )}
                 >
                   <p className="font-bold mb-1.5 flex items-center gap-1.5">
-                    {acertos[acertos.length-1] ? <><CheckCircle size={12}/> Correto!</> : <><XCircle size={12}/> Incorreto</>}
+                    {acertos[acertos.length - 1] ? <><CheckCircle size={12} /> Correto!</> : <><XCircle size={12} /> Incorreto</>}
                   </p>
                   {pergunta.exp}
                 </motion.div>
@@ -988,7 +989,7 @@ function QuizTab({ progress, onQuizCompleto }: {
               <motion.button initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} onClick={proxima}
                 className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-500 hover:to-green-500 text-white font-semibold text-sm transition-all shadow-lg shadow-emerald-900/30"
               >
-                {qIdx + 1 >= cat.perguntas.length ? <><Trophy size={14}/> Ver resultado</> : <>Proxima <ArrowRight size={14}/></>}
+                {qIdx + 1 >= cat.perguntas.length ? <><Trophy size={14} /> Ver resultado</> : <>Proxima <ArrowRight size={14} /></>}
               </motion.button>
             )}
           </GlassCard>
@@ -1001,15 +1002,15 @@ function QuizTab({ progress, onQuizCompleto }: {
 // --- Carbon Tab --------------------------------------------------------------
 
 function CarbonTab() {
-  const meses6 = Array.from({length:6},(_,i)=>{
-    const d = new Date(); d.setMonth(d.getMonth()-i);
-    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+  const meses6 = Array.from({ length: 6 }, (_, i) => {
+    const d = new Date(); d.setMonth(d.getMonth() - i);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
   });
-  const [mesSel, setMesSel]       = useState(meses6[0]);
-  const [loading, setLoading]     = useState(false);
-  const [carbono, setCarbono]     = useState<ReturnType<typeof calcularCarbono>|null>(null);
-  const [historico, setHistorico] = useState<{label:string;kg:number}[]>([]);
-  const [dicaIA, setDicaIA]       = useState('');
+  const [mesSel, setMesSel] = useState(meses6[0]);
+  const [loading, setLoading] = useState(false);
+  const [carbono, setCarbono] = useState<ReturnType<typeof calcularCarbono> | null>(null);
+  const [historico, setHistorico] = useState<{ label: string; kg: number }[]>([]);
+  const [dicaIA, setDicaIA] = useState('');
   const [loadingIA, setLoadingIA] = useState(false);
 
   async function calcular() {
@@ -1017,34 +1018,34 @@ function CarbonTab() {
     if (!uid) return;
     setLoading(true); setCarbono(null); setDicaIA(''); setHistorico([]);
     try {
-      const snap = await getDocs(query(collection(db,'registros'),where('uid','==',uid),where('mes','==',mesSel)));
-      const regs = snap.docs.map(d=>d.data() as Registro);
-      const res  = calcularCarbono(regs);
-      const e = regs.filter(r=>r.categoria==='energia').reduce((s,r)=>s+r.valor,0);
-      const a = regs.filter(r=>r.categoria==='agua').reduce((s,r)=>s+r.valor,0);
-      const o = regs.filter(r=>r.categoria==='outro').reduce((s,r)=>s+r.valor,0);
+      const snap = await getDocs(query(collection(db, 'registros'), where('uid', '==', uid), where('mes', '==', mesSel)));
+      const regs = snap.docs.map(d => d.data() as Registro);
+      const res = calcularCarbono(regs);
+      const e = regs.filter(r => r.categoria === 'energia').reduce((s, r) => s + r.valor, 0);
+      const a = regs.filter(r => r.categoria === 'agua').reduce((s, r) => s + r.valor, 0);
+      const o = regs.filter(r => r.categoria === 'outro').reduce((s, r) => s + r.valor, 0);
       setCarbono(res);
 
-      const hist = await Promise.all(meses6.slice().reverse().map(async m=>{
-        const s = await getDocs(query(collection(db,'registros'),where('uid','==',uid),where('mes','==',m)));
-        const rs = s.docs.map(d=>d.data() as Registro);
-        const kg = rs.reduce((acc,r)=>acc+r.valor*CARBON_FACTORS[r.categoria],0);
-        return { label: getMesLabel(m,true), kg: +kg.toFixed(1) };
+      const hist = await Promise.all(meses6.slice().reverse().map(async m => {
+        const s = await getDocs(query(collection(db, 'registros'), where('uid', '==', uid), where('mes', '==', m)));
+        const rs = s.docs.map(d => d.data() as Registro);
+        const kg = rs.reduce((acc, r) => acc + r.valor * CARBON_FACTORS[r.categoria], 0);
+        return { label: getMesLabel(m, true), kg: +kg.toFixed(1) };
       }));
       setHistorico(hist);
 
       setLoadingIA(true);
-      const dica = await gerarDicaIA(e,a,o,res.totalKg);
+      const dica = await gerarDicaIA(e, a, o, res.totalKg);
       setDicaIA(dica);
     } finally { setLoading(false); setLoadingIA(false); }
   }
 
   const nivel = carbono
     ? carbono.totalKg < 50
-      ? { label:'Baixo', color:'text-emerald-400', bg:'bg-emerald-600/20 border-emerald-600/30', bar:'bg-emerald-500' }
+      ? { label: 'Baixo', color: 'text-emerald-400', bg: 'bg-emerald-600/20 border-emerald-600/30', bar: 'bg-emerald-500' }
       : carbono.totalKg < 120
-        ? { label:'Medio', color:'text-yellow-400', bg:'bg-yellow-600/20 border-yellow-600/30', bar:'bg-yellow-500' }
-        : { label:'Alto', color:'text-red-400', bg:'bg-red-600/20 border-red-600/30', bar:'bg-red-500' }
+        ? { label: 'Medio', color: 'text-yellow-400', bg: 'bg-yellow-600/20 border-yellow-600/30', bar: 'bg-yellow-500' }
+        : { label: 'Alto', color: 'text-red-400', bg: 'bg-red-600/20 border-red-600/30', bar: 'bg-red-500' }
     : null;
 
   return (
@@ -1052,15 +1053,15 @@ function CarbonTab() {
       <GlassCard className="p-5 flex flex-col sm:flex-row items-start sm:items-center gap-4">
         <div className="flex-1 space-y-1">
           <label className="text-xs text-slate-500 font-medium uppercase tracking-wider">Mes de referencia</label>
-          <select value={mesSel} onChange={e=>{setMesSel(e.target.value);setCarbono(null);setDicaIA('');}}
+          <select value={mesSel} onChange={e => { setMesSel(e.target.value); setCarbono(null); setDicaIA(''); }}
             className="bg-white/10 border border-white/10 text-white text-sm font-medium px-4 py-2.5 rounded-xl outline-none">
-            {meses6.map(m=><option key={m} value={m} className="bg-slate-800">{getMesLabel(m)}</option>)}
+            {meses6.map(m => <option key={m} value={m} className="bg-slate-800">{getMesLabel(m)}</option>)}
           </select>
         </div>
-        <motion.button whileHover={{scale:1.02}} whileTap={{scale:0.98}} onClick={calcular} disabled={loading}
+        <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={calcular} disabled={loading}
           className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-500 hover:to-green-500 text-white text-sm font-semibold shadow-lg shadow-emerald-900/30"
         >
-          {loading ? <Loader2 size={15} className="animate-spin"/> : <Calculator size={15}/>}
+          {loading ? <Loader2 size={15} className="animate-spin" /> : <Calculator size={15} />}
           {loading ? 'Calculando...' : 'Calcular pegada'}
         </motion.button>
       </GlassCard>
@@ -1068,7 +1069,7 @@ function CarbonTab() {
       {!carbono && !loading && (
         <GlassCard className="flex flex-col items-center justify-center py-16 gap-4 text-center">
           <div className="w-16 h-16 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center">
-            <Wind size={28} className="text-emerald-500"/>
+            <Wind size={28} className="text-emerald-500" />
           </div>
           <div>
             <p className="font-bold text-white">Calcule sua pegada de carbono</p>
@@ -1079,12 +1080,12 @@ function CarbonTab() {
 
       <AnimatePresence>
         {carbono && (
-          <motion.div initial={{opacity:0,y:12}} animate={{opacity:1,y:0}} exit={{opacity:0}} className="space-y-4">
+          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-4">
             <GlassCard className="p-6 text-center relative overflow-hidden">
-              <div className="absolute inset-0 bg-gradient-to-br from-emerald-600/8 to-transparent pointer-events-none"/>
+              <div className="absolute inset-0 bg-gradient-to-br from-emerald-600/8 to-transparent pointer-events-none" />
               <p className="text-xs text-slate-500 uppercase tracking-widest mb-2">Pegada de Carbono - {getMesLabel(mesSel)}</p>
               <div className="flex items-end justify-center gap-2 mb-3">
-                <motion.span initial={{scale:0.5,opacity:0}} animate={{scale:1,opacity:1}} transition={{type:'spring',stiffness:200}}
+                <motion.span initial={{ scale: 0.5, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: 'spring', stiffness: 200 }}
                   className="text-6xl font-black text-white">
                   {carbono.totalKg.toFixed(1)}
                 </motion.span>
@@ -1096,8 +1097,8 @@ function CarbonTab() {
                     Nivel {nivel.label}
                   </span>
                   <div className="w-full h-2 bg-white/10 rounded-full overflow-hidden mt-2">
-                    <motion.div initial={{width:0}} animate={{width:`${Math.min((carbono.totalKg/167)*100,100)}%`}}
-                      transition={{duration:1.2,ease:'easeOut'}}
+                    <motion.div initial={{ width: 0 }} animate={{ width: `${Math.min((carbono.totalKg / 167) * 100, 100)}%` }}
+                      transition={{ duration: 1.2, ease: 'easeOut' }}
                       className={clsx('h-full rounded-full', nivel.bar)}
                     />
                   </div>
@@ -1108,14 +1109,14 @@ function CarbonTab() {
 
             <div className="grid grid-cols-3 gap-3">
               {[
-                {label:'Energia', kg:carbono.energiaKg, icon:Zap,     cor:'from-amber-500 to-yellow-500'},
-                {label:'Agua',    kg:carbono.aguaKg,    icon:Droplets, cor:'from-blue-500 to-cyan-500'},
-                {label:'Outros',  kg:carbono.outroKg,   icon:Wind,     cor:'from-violet-500 to-indigo-500'},
-              ].map(c=>(
-                <motion.div key={c.label} whileHover={{scale:1.04}}>
+                { label: 'Energia', kg: carbono.energiaKg, icon: Zap, cor: 'from-amber-500 to-yellow-500' },
+                { label: 'Agua', kg: carbono.aguaKg, icon: Droplets, cor: 'from-blue-500 to-cyan-500' },
+                { label: 'Outros', kg: carbono.outroKg, icon: Wind, cor: 'from-violet-500 to-indigo-500' },
+              ].map(c => (
+                <motion.div key={c.label} whileHover={{ scale: 1.04 }}>
                   <GlassCard className="p-4 text-center">
                     <div className={clsx('w-9 h-9 rounded-xl bg-gradient-to-br flex items-center justify-center mx-auto mb-2', c.cor)}>
-                      <c.icon size={16} className="text-white"/>
+                      <c.icon size={16} className="text-white" />
                     </div>
                     <p className="text-xl font-black text-white">{c.kg.toFixed(1)}</p>
                     <p className="text-[10px] text-slate-500">kg CO2</p>
@@ -1128,21 +1129,21 @@ function CarbonTab() {
             {historico.length > 0 && (
               <GlassCard className="p-5 space-y-3">
                 <p className="text-xs text-slate-500 uppercase tracking-wider font-medium flex items-center gap-2">
-                  <BarChart3 size={12}/> Evolucao - ultimos 6 meses (kg CO2)
+                  <BarChart3 size={12} /> Evolucao - ultimos 6 meses (kg CO2)
                 </p>
                 <ResponsiveContainer width="100%" height={200}>
-                  <BarChart data={historico} margin={{top:4,right:4,left:-20,bottom:0}}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)"/>
-                    <XAxis dataKey="label" tick={{fill:'#64748b',fontSize:10}} axisLine={false} tickLine={false}/>
-                    <YAxis tick={{fill:'#64748b',fontSize:10}} axisLine={false} tickLine={false}/>
+                  <BarChart data={historico} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
+                    <XAxis dataKey="label" tick={{ fill: '#64748b', fontSize: 10 }} axisLine={false} tickLine={false} />
+                    <YAxis tick={{ fill: '#64748b', fontSize: 10 }} axisLine={false} tickLine={false} />
                     <Tooltip
-                      contentStyle={{background:'#1e293b',border:'1px solid rgba(255,255,255,0.1)',borderRadius:12,fontSize:11}}
-                      labelStyle={{color:'#94a3b8'}} itemStyle={{color:'#e2e8f0'}}
-                      formatter={(v:any)=>[`${v} kg CO2`]}
+                      contentStyle={{ background: '#1e293b', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, fontSize: 11 }}
+                      labelStyle={{ color: '#94a3b8' }} itemStyle={{ color: '#e2e8f0' }}
+                      formatter={(v: any) => [`${v} kg CO2`]}
                     />
-                    <Bar dataKey="kg" radius={[6,6,0,0]}>
-                      {historico.map((entry,i)=>(
-                        <Cell key={i} fill={entry.label===getMesLabel(mesSel,true)?'#22c55e':'#334155'}/>
+                    <Bar dataKey="kg" radius={[6, 6, 0, 0]}>
+                      {historico.map((entry, i) => (
+                        <Cell key={i} fill={entry.label === getMesLabel(mesSel, true) ? '#22c55e' : '#334155'} />
                       ))}
                     </Bar>
                   </BarChart>
@@ -1154,11 +1155,11 @@ function CarbonTab() {
               <p className="text-xs text-slate-500 uppercase tracking-wider font-medium">Isso equivale a...</p>
               <div className="grid sm:grid-cols-3 gap-3">
                 {[
-                  {emoji:'🌳', label:`${carbono.arvoresTotais} arvore${carbono.arvoresTotais!==1?'s':''}`, sub:'para absorver em 1 ano'},
-                  {emoji:'🚗', label:`${carbono.kmCarro.toLocaleString('pt-BR')} km`, sub:'rodados de carro'},
-                  {emoji:'✈️', label:`${carbono.horasAviao}h de voo`, sub:'em altitude de cruzeiro'},
-                ].map((eq,i)=>(
-                  <motion.div key={i} whileHover={{scale:1.03}} className="flex items-center gap-3 p-3 rounded-xl bg-white/5 border border-white/10">
+                  { emoji: '🌳', label: `${carbono.arvoresTotais} arvore${carbono.arvoresTotais !== 1 ? 's' : ''}`, sub: 'para absorver em 1 ano' },
+                  { emoji: '🚗', label: `${carbono.kmCarro.toLocaleString('pt-BR')} km`, sub: 'rodados de carro' },
+                  { emoji: '✈️', label: `${carbono.horasAviao}h de voo`, sub: 'em altitude de cruzeiro' },
+                ].map((eq, i) => (
+                  <motion.div key={i} whileHover={{ scale: 1.03 }} className="flex items-center gap-3 p-3 rounded-xl bg-white/5 border border-white/10">
                     <span className="text-2xl">{eq.emoji}</span>
                     <div>
                       <p className="text-sm font-bold text-white">{eq.label}</p>
@@ -1171,15 +1172,15 @@ function CarbonTab() {
 
             <GlassCard className="p-5 space-y-3 border-emerald-500/20 bg-emerald-600/5">
               <div className="flex items-center gap-2">
-                <Sparkles size={15} className="text-emerald-400"/>
+                <Sparkles size={15} className="text-emerald-400" />
                 <p className="text-xs font-bold text-emerald-400 uppercase tracking-wider">Analise Personalizada - IA</p>
               </div>
               {loadingIA ? (
                 <div className="flex items-center gap-2 text-sm text-slate-400">
-                  <Loader2 size={14} className="animate-spin text-emerald-400"/> Analisando seus dados...
+                  <Loader2 size={14} className="animate-spin text-emerald-400" /> Analisando seus dados...
                 </div>
               ) : dicaIA ? (
-                <motion.p initial={{opacity:0}} animate={{opacity:1}} className="text-sm text-emerald-200 leading-relaxed">{dicaIA}</motion.p>
+                <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-sm text-emerald-200 leading-relaxed">{dicaIA}</motion.p>
               ) : null}
             </GlassCard>
 
@@ -1187,14 +1188,14 @@ function CarbonTab() {
               <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Acoes de Alto Impacto</p>
               <div className="space-y-2">
                 {[
-                  {acao:'Comer menos carne bovina (2x/semana menos)', reducao:'-6 kg CO2/mes', emoji:'🥗'},
-                  {acao:'Usar transporte publico 3x por semana',       reducao:'-4 kg CO2/mes', emoji:'🚌'},
-                  {acao:'Trocar todas as lampadas por LED',            reducao:'-2 kg CO2/mes', emoji:'💡'},
-                  {acao:'Reduzir 5 min no banho diario',               reducao:'-1,5 kg CO2/mes', emoji:'🚿'},
-                  {acao:'Desligar stand-by dos aparelhos',             reducao:'-0,8 kg CO2/mes', emoji:'🔌'},
-                ].map((a,i)=>(
-                  <motion.div key={i} initial={{opacity:0,x:-8}} animate={{opacity:1,x:0}} transition={{delay:i*0.07}}
-                    whileHover={{x:4}}
+                  { acao: 'Comer menos carne bovina (2x/semana menos)', reducao: '-6 kg CO2/mes', emoji: '🥗' },
+                  { acao: 'Usar transporte publico 3x por semana', reducao: '-4 kg CO2/mes', emoji: '🚌' },
+                  { acao: 'Trocar todas as lampadas por LED', reducao: '-2 kg CO2/mes', emoji: '💡' },
+                  { acao: 'Reduzir 5 min no banho diario', reducao: '-1,5 kg CO2/mes', emoji: '🚿' },
+                  { acao: 'Desligar stand-by dos aparelhos', reducao: '-0,8 kg CO2/mes', emoji: '🔌' },
+                ].map((a, i) => (
+                  <motion.div key={i} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.07 }}
+                    whileHover={{ x: 4 }}
                     className="flex items-center justify-between gap-3 p-2.5 rounded-xl hover:bg-white/5 transition-colors"
                   >
                     <div className="flex items-center gap-2.5">
@@ -1217,11 +1218,11 @@ function CarbonTab() {
 
 export default function EducationPage() {
   const { darkMode } = useTheme();
-  const [tab, setTab]             = useState<'artigos'|'videos'|'quiz'|'carbono'>('artigos');
-  const [progress, setProgress]   = useState<UserProgress | null>(null);
+  const [tab, setTab] = useState<'artigos' | 'videos' | 'quiz' | 'carbono'>('artigos');
+  const [progress, setProgress] = useState<UserProgress | null>(null);
   const [loadingProgress, setLoadingProgress] = useState(true);
 
-  const uid      = auth.currentUser?.uid;
+  const uid = auth.currentUser?.uid;
   const userName = auth.currentUser?.displayName ?? auth.currentUser?.email?.split('@')[0] ?? 'Usuario';
 
   useEffect(() => {
@@ -1255,32 +1256,32 @@ export default function EducationPage() {
     } : p);
   }
 
-  const artigosLidos  = progress?.artigosLidos.length  ?? 0;
+  const artigosLidos = progress?.artigosLidos.length ?? 0;
   const quizCompletos = progress?.quizzesCompletos.length ?? 0;
-  const xpEducacao    = progress?.xpEducacao ?? 0;
+  const xpEducacao = progress?.xpEducacao ?? 0;
 
   const TABS = [
-    { id: 'artigos', label: 'Noticias',  icon: BookOpen, badge: artigosLidos  },
-    { id: 'videos',  label: 'Videos',    icon: Play,     badge: 0             },
-    { id: 'quiz',    label: 'Quiz',      icon: Brain,    badge: quizCompletos },
-    { id: 'carbono', label: 'Carbono',   icon: Wind,     badge: 0             },
+    { id: 'artigos', label: 'Noticias', icon: BookOpen, badge: artigosLidos },
+    { id: 'videos', label: 'Videos', icon: Play, badge: 0 },
+    { id: 'quiz', label: 'Quiz', icon: Brain, badge: quizCompletos },
+    { id: 'carbono', label: 'Carbono', icon: Wind, badge: 0 },
   ] as const;
 
   return (
     <div className={clsx('min-h-screen p-6 space-y-6', darkMode ? 'bg-slate-900' : 'bg-slate-50')}>
       {darkMode && (
         <div className="fixed inset-0 pointer-events-none overflow-hidden -z-10">
-          <div className="absolute top-0 left-1/3 w-96 h-96 bg-emerald-600/6 rounded-full blur-3xl"/>
-          <div className="absolute bottom-1/4 right-1/4 w-64 h-64 bg-teal-600/5 rounded-full blur-3xl"/>
+          <div className="absolute top-0 left-1/3 w-96 h-96 bg-emerald-600/6 rounded-full blur-3xl" />
+          <div className="absolute bottom-1/4 right-1/4 w-64 h-64 bg-teal-600/5 rounded-full blur-3xl" />
         </div>
       )}
 
-      <motion.div initial={{opacity:0,y:-12}} animate={{opacity:1,y:0}} transition={{duration:0.4}}
+      <motion.div initial={{ opacity: 0, y: -12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}
         className="flex items-center justify-between"
       >
         <div className="flex items-center gap-4">
           <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-xl shadow-emerald-900/40">
-            <BookOpen size={22} className="text-white"/>
+            <BookOpen size={22} className="text-white" />
           </div>
           <div>
             <h1 className={clsx('text-2xl font-black', darkMode ? 'text-white' : 'text-slate-900')}>
@@ -1292,69 +1293,75 @@ export default function EducationPage() {
           </div>
         </div>
         {!loadingProgress && (
-          <motion.div initial={{opacity:0,scale:0.8}} animate={{opacity:1,scale:1}}
+          <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }}
             className="flex items-center gap-2 px-3 py-2 rounded-xl bg-emerald-600/20 border border-emerald-600/30"
           >
-            <Flame size={14} className="text-emerald-400"/>
+            <Flame size={14} className="text-emerald-400" />
             <span className="text-emerald-300 font-bold text-sm">{xpEducacao} XP</span>
           </motion.div>
         )}
       </motion.div>
 
-      <motion.div initial={{opacity:0,y:8}} animate={{opacity:1,y:0}} transition={{duration:0.4,delay:0.05}}>
-        <DesafioCard progress={progress} onAceitarDesafio={handleAceitarDesafio}/>
+      <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.05 }}>
+        <DesafioCard progress={progress} onAceitarDesafio={handleAceitarDesafio} />
       </motion.div>
 
       {!loadingProgress && (
-        <motion.div initial={{opacity:0}} animate={{opacity:1}} transition={{delay:0.15}}
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.15 }}
           className={clsx('rounded-2xl border p-4 flex items-center gap-4', darkMode ? 'bg-white/5 border-white/10' : 'bg-white border-slate-200 shadow-sm')}
         >
           <div className="flex gap-4 flex-wrap">
             {[
-              {label:'Noticias lidas', value:`${artigosLidos}/${NOTICIAS_CATEGORIAS.length}`, icon:BookOpen, color:'text-blue-400'},
-              {label:'Quizzes',        value:`${quizCompletos}/${QUIZ_CATEGORIAS.length}`,    icon:Brain,    color:'text-violet-400'},
-              {label:'Desafios',       value:`${progress?.desafiosAceitos.length??0}/7`,      icon:Bolt,     color:'text-amber-400'},
-            ].map(s=>(
+              { label: 'Noticias lidas', value: `${artigosLidos}/${NOTICIAS_CATEGORIAS.length}`, icon: BookOpen, color: 'text-blue-400' },
+              { label: 'Quizzes', value: `${quizCompletos}/${QUIZ_CATEGORIAS.length}`, icon: Brain, color: 'text-violet-400' },
+              { label: 'Desafios', value: `${progress?.desafiosAceitos.length ?? 0}/7`, icon: Bolt, color: 'text-amber-400' },
+            ].map(s => (
               <div key={s.label} className="flex items-center gap-2">
-                <s.icon size={13} className={s.color}/>
+                <s.icon size={13} className={s.color} />
                 <span className={clsx('text-xs font-bold', s.color)}>{s.value}</span>
-                <span className={clsx('text-xs', darkMode?'text-slate-500':'text-slate-400')}>{s.label}</span>
+                <span className={clsx('text-xs', darkMode ? 'text-slate-500' : 'text-slate-400')}>{s.label}</span>
               </div>
             ))}
           </div>
           <div className="flex-1 min-w-0">
-            <div className={clsx('h-1.5 rounded-full', darkMode?'bg-white/10':'bg-slate-200')}>
+            <div className={clsx('h-1.5 rounded-full', darkMode ? 'bg-white/10' : 'bg-slate-200')}>
               <motion.div
-                initial={{width:0}}
-                animate={{width:`${Math.round(((artigosLidos+quizCompletos)/(NOTICIAS_CATEGORIAS.length+QUIZ_CATEGORIAS.length))*100)}%`}}
-                transition={{duration:1,ease:'easeOut'}}
+                initial={{ width: 0 }}
+                animate={{ width: `${Math.round(((artigosLidos + quizCompletos) / (NOTICIAS_CATEGORIAS.length + QUIZ_CATEGORIAS.length)) * 100)}%` }}
+                transition={{ duration: 1, ease: 'easeOut' }}
                 className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-teal-500"
               />
             </div>
-            <p className={clsx('text-[10px] mt-1', darkMode?'text-slate-500':'text-slate-400')}>Progresso geral</p>
+            <p className={clsx('text-[10px] mt-1', darkMode ? 'text-slate-500' : 'text-slate-400')}>Progresso geral</p>
           </div>
         </motion.div>
       )}
 
-      <motion.div initial={{opacity:0,y:8}} animate={{opacity:1,y:0}} transition={{duration:0.4,delay:0.1}}
+      <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.1 }}
         className={clsx('flex gap-1 p-1.5 rounded-2xl overflow-x-auto border backdrop-blur-sm',
           darkMode ? 'bg-white/5 border-white/10' : 'bg-white border-slate-200 shadow-sm'
         )}
       >
         {TABS.map(t => (
-          <TabBtn key={t.id} id={t.id} label={t.label} icon={t.icon} active={tab===t.id} onClick={()=>setTab(t.id)} badge={t.badge} />
-        ))}
+          <TabBtn
+            key={t.id}
+            label={t.label}
+            icon={t.icon}
+            active={tab === t.id}
+            onClick={() => setTab(t.id)}
+            badge={t.badge}
+          />))}
       </motion.div>
 
       <AnimatePresence mode="wait">
         <motion.div key={tab}
-          initial={{opacity:0,y:10}} animate={{opacity:1,y:0}} exit={{opacity:0,y:-10}}
-          transition={{duration:0.2}}
+          initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
+          transition={{ duration: 0.2 }}
         >
-          {tab === 'artigos' && <ArtigosTab progress={progress} onArtigoLido={handleArtigoLido}/>}
-          {tab === 'videos'  && <VideosTab/>}
-          {tab === 'quiz'    && <QuizTab progress={progress} onQuizCompleto={handleQuizCompleto}/>}
-          {tab === 'carbono' && <CarbonTab/>}
+          {tab === 'artigos' && <ArtigosTab progress={progress} onArtigoLido={handleArtigoLido} />}
+          {tab === 'videos' && <VideosTab />}
+          {tab === 'quiz' && <QuizTab progress={progress} onQuizCompleto={handleQuizCompleto} />}
+          {tab === 'carbono' && <CarbonTab />}
         </motion.div>
       </AnimatePresence>
     </div>
