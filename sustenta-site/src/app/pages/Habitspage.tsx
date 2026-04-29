@@ -202,6 +202,7 @@ export const HabitsPage: React.FC = () => {
   React.useEffect(() => {
     const fetchDados = async () => {
       const user = auth.currentUser;
+
       if (!user) {
         setCarregando(false);
         return;
@@ -210,12 +211,15 @@ export const HabitsPage: React.FC = () => {
       setCarregando(true);
 
       try {
-        const snap = await getDoc(doc(db, 'habitos_usuarios', user.uid));
+        const habitosRef = doc(db, 'habitos_usuarios', user.uid);
+        const habitosSnap = await getDoc(habitosRef);
 
-        if (snap.exists()) {
-          setDados(snap.data() as DadosUsuarioHabitos);
+        let dadosUsuario: DadosUsuarioHabitos;
+
+        if (habitosSnap.exists()) {
+          dadosUsuario = habitosSnap.data() as DadosUsuarioHabitos;
         } else {
-          const inicial: DadosUsuarioHabitos = {
+          dadosUsuario = {
             uid: user.uid,
             streak: 0,
             ultimoRegistro: '',
@@ -226,36 +230,65 @@ export const HabitsPage: React.FC = () => {
             xpHabitos: 0,
           };
 
-          await setDoc(doc(db, 'habitos_usuarios', user.uid), inicial, { merge: true });
-          setDados(inicial);
+          await setDoc(habitosRef, dadosUsuario, { merge: true });
         }
 
-        const userSnap = await getDoc(doc(db, 'usuarios', user.uid));
-        const grupoId = userSnap.data()?.grupoFamiliaId;
+        setDados(dadosUsuario);
 
-        if (grupoId) {
-          const grupoSnap = await getDoc(doc(db, 'grupos_familia', grupoId));
+        const usuarioSnap = await getDoc(doc(db, 'usuarios', user.uid));
 
-          if (grupoSnap.exists()) {
-            const membros = grupoSnap.data().membros || [];
-
-            const ranking = await Promise.all(
-              membros.map(async (m: any) => {
-                const hSnap = await getDoc(doc(db, 'habitos_usuarios', m.uid));
-
-                return {
-                  uid: m.uid,
-                  nome: m.nome,
-                  xp: hSnap.exists() ? hSnap.data().xpHabitos || 0 : 0,
-                };
-              })
-            );
-
-            setRankingFamilia(ranking.sort((a, b) => b.xp - a.xp));
-          }
+        if (!usuarioSnap.exists()) {
+          setRankingFamilia([]);
+          return;
         }
+
+        const usuarioData = usuarioSnap.data();
+        const grupoId = usuarioData?.grupoFamiliaId;
+
+        if (!grupoId) {
+          setRankingFamilia([]);
+          return;
+        }
+
+        const grupoSnap = await getDoc(doc(db, 'grupos_familia', grupoId));
+
+        if (!grupoSnap.exists()) {
+          setRankingFamilia([]);
+          return;
+        }
+
+        const grupoData = grupoSnap.data();
+        const membros = grupoData?.membros || [];
+
+        if (!Array.isArray(membros) || membros.length === 0) {
+          setRankingFamilia([]);
+          return;
+        }
+
+        const ranking = await Promise.all(
+          membros.map(async (membro: any) => {
+            try {
+              const membroHabitosSnap = await getDoc(doc(db, 'habitos_usuarios', membro.uid));
+
+              return {
+                uid: membro.uid,
+                nome: membro.nome || membro.email || 'Usuário',
+                xp: membroHabitosSnap.exists() ? membroHabitosSnap.data().xpHabitos || 0 : 0,
+              };
+            } catch {
+              return {
+                uid: membro.uid,
+                nome: membro.nome || membro.email || 'Usuário',
+                xp: 0,
+              };
+            }
+          })
+        );
+
+        setRankingFamilia(ranking.sort((a, b) => b.xp - a.xp));
       } catch (e) {
-        console.error('Erro ao carregar hábitos:', e);
+        console.error('Erro ao carregar hábitos e ranking familiar:', e);
+        setRankingFamilia([]);
       } finally {
         setCarregando(false);
       }
