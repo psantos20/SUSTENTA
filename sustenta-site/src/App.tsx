@@ -18,6 +18,11 @@ import { PrivacidadePage } from './app/pages/PrivacidadePage';
 import EducationPage from './app/pages/EducationPage';
 import { TermosUsoPage } from './app/pages/TermosUsoPage';
 import { entrarNoGrupo } from './services/familia';
+
+// 🔥 Firebase
+import { onAuthStateChanged, signOut } from "firebase/auth";
+import { auth } from "./services/firebase";
+
 type Page =
   | 'dashboard' | 'consumption' | 'analysis' | 'habits'
   | 'history' | 'map' | 'reports' | 'profile'
@@ -34,7 +39,7 @@ function PageContent({ page, onNavigate }: { page: Page; onNavigate: (p: string)
   if (page === 'history')     return <HistoryPage />;
   if (page === 'map')         return <MapPage />;
   if (page === 'reports')     return <ReportsPage />;
-  if (page === 'education') return <EducationPage />;
+  if (page === 'education')   return <EducationPage />;
 
   return (
     <div className="flex items-center justify-center h-64">
@@ -51,13 +56,28 @@ function PageContent({ page, onNavigate }: { page: Page; onNavigate: (p: string)
 
 export default function App() {
   const [isAuthenticated, setIsAuthenticated] = React.useState(false);
-  const [currentPage,     setCurrentPage]     = React.useState<Page>('dashboard');
-  const [publicPage,      setPublicPage]      = React.useState<PagePublica>('login');
-  const [nivelInfo,       setNivelInfo]       = React.useState({
+  const [loading, setLoading] = React.useState(true);
+
+  const [currentPage, setCurrentPage] = React.useState<Page>('dashboard');
+  const [publicPage, setPublicPage] = React.useState<PagePublica>('login');
+
+  const [nivelInfo, setNivelInfo] = React.useState({
     nivel: 1, xpAtual: 0, xpTotal: 1000, nome: 'Iniciante'
   });
+
   const [convitePendente, setConvitePendente] = React.useState<string | null>(null);
 
+  // ESCUTA LOGIN DO FIREBASE
+  React.useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setIsAuthenticated(!!user);
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  // Convite via URL
   React.useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const codigo = params.get('convite');
@@ -69,20 +89,39 @@ export default function App() {
 
   React.useEffect(() => {
     if (!isAuthenticated || !convitePendente) return;
+
     entrarNoGrupo(convitePendente)
-      .then(() => { setConvitePendente(null); setCurrentPage('profile'); })
+      .then(() => {
+        setConvitePendente(null);
+        setCurrentPage('profile');
+      })
       .catch(() => setConvitePendente(null));
   }, [isAuthenticated, convitePendente]);
 
   React.useEffect(() => {
     if (!isAuthenticated) return;
+
     buscarTodosRegistros().then(registros => {
       const info = calcularNivel(registros.length);
-      setNivelInfo({ nivel: info.nivel, xpAtual: info.xpAtual, xpTotal: info.xpTotal, nome: info.nome });
+      setNivelInfo({
+        nivel: info.nivel,
+        xpAtual: info.xpAtual,
+        xpTotal: info.xpTotal,
+        nome: info.nome
+      });
     });
   }, [isAuthenticated, currentPage]);
 
-  // Paginas publicas (sem login)
+  // 🔒 LOADING GLOBAL
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <p className="text-slate-600 dark:text-slate-300">Carregando...</p>
+      </div>
+    );
+  }
+
+  // 🌐 PÁGINAS PÚBLICAS
   if (!isAuthenticated) {
     const voltarLogin = () => setPublicPage('login');
 
@@ -98,13 +137,14 @@ export default function App() {
     return (
       <ThemeProvider>
         <LoginPage
-          onLogin={() => setIsAuthenticated(true)}
+          onLogin={() => {}} // 🔥 Firebase já controla
           onNavigate={(p) => setPublicPage(p as PagePublica)}
         />
       </ThemeProvider>
     );
   }
 
+  // 🔐 APP LOGADO
   return (
     <ThemeProvider>
       <NotificacoesProvider>
@@ -112,7 +152,11 @@ export default function App() {
           <AppLayout
             activePage={currentPage}
             onNavigate={(page) => setCurrentPage(page as Page)}
-            onLogout={() => { setIsAuthenticated(false); setCurrentPage('dashboard'); setPublicPage('login'); }}
+            onLogout={async () => {
+              await signOut(auth);
+              setCurrentPage('dashboard');
+              setPublicPage('login');
+            }}
             nivel={nivelInfo.nivel}
             xpAtual={nivelInfo.xpAtual}
             xpTotal={nivelInfo.xpTotal}
@@ -126,7 +170,10 @@ export default function App() {
                 exit={{ opacity: 0, y: -10 }}
                 transition={{ duration: 0.2 }}
               >
-                <PageContent page={currentPage} onNavigate={(p) => setCurrentPage(p as Page)} />
+                <PageContent
+                  page={currentPage}
+                  onNavigate={(p) => setCurrentPage(p as Page)}
+                />
               </motion.div>
             </AnimatePresence>
           </AppLayout>
