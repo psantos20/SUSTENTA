@@ -139,77 +139,267 @@ function exportarCSV(data: ReportData) {
   URL.revokeObjectURL(url);
 }
 
-async function gerarPDF(elementId: string, mes: string) {
-  const [{ default: jsPDF }, { default: html2canvas }] = await Promise.all([
-    import('jspdf'),
-    import('html2canvas'),
-  ]);
+async function gerarPDF(_elementId: string, mes: string, data?: ReportData) {
+  const { default: jsPDF } = await import('jspdf');
 
-  const element = document.getElementById(elementId);
-
-  if (!element) {
-    throw new Error('Elemento do relatório não encontrado.');
+  if (!data) {
+    throw new Error('Dados do relatório não encontrados.');
   }
 
-  const originalTransform = element.style.transform;
-  const originalMaxHeight = element.style.maxHeight;
-  const originalOverflow = element.style.overflow;
+  const pdf = new jsPDF({
+    orientation: 'portrait',
+    unit: 'mm',
+    format: 'a4',
+  });
 
-  element.style.transform = 'none';
-  element.style.maxHeight = 'none';
-  element.style.overflow = 'visible';
+  const pageW = pdf.internal.pageSize.getWidth();
+  const pageH = pdf.internal.pageSize.getHeight();
 
-  await new Promise((resolve) => setTimeout(resolve, 300));
+  const margem = 14;
+  const largura = pageW - margem * 2;
 
-  try {
-    const canvas = await html2canvas(element, {
-      scale: 2,
-      useCORS: true,
-      allowTaint: true,
-      backgroundColor: '#0f172a',
-      logging: false,
-      scrollX: 0,
-      scrollY: 0,
-      windowWidth: element.scrollWidth,
-      windowHeight: element.scrollHeight,
-    });
+  let y = 18;
 
-    const imgData = canvas.toDataURL('image/jpeg', 0.95);
+  function desenharFundo() {
+    pdf.setFillColor(2, 6, 23);
+    pdf.rect(0, 0, pageW, pageH, 'F');
+  }
 
-    const pdf = new jsPDF({
-      orientation: 'portrait',
-      unit: 'mm',
-      format: 'a4',
-      compress: true,
-    });
-
-    const pdfW = pdf.internal.pageSize.getWidth();
-    const pdfH = pdf.internal.pageSize.getHeight();
-
-    const imgW = pdfW;
-    const imgH = (canvas.height * imgW) / canvas.width;
-
-    let heightLeft = imgH;
-    let position = 0;
-
-    pdf.addImage(imgData, 'JPEG', 0, position, imgW, imgH);
-    heightLeft -= pdfH;
-
-    while (heightLeft > 0) {
-      position = heightLeft - imgH;
+  function novaPaginaSePreciso(altura = 12) {
+    if (y + altura > pageH - 14) {
       pdf.addPage();
-      pdf.addImage(imgData, 'JPEG', 0, position, imgW, imgH);
-      heightLeft -= pdfH;
+      desenharFundo();
+      y = 18;
     }
-
-    pdf.save(`Sustenta_Relatorio_${mes}.pdf`);
-  } finally {
-    element.style.transform = originalTransform;
-    element.style.maxHeight = originalMaxHeight;
-    element.style.overflow = originalOverflow;
   }
-}
 
+  function texto(txt: string, x: number, yy: number, size = 10, bold = false) {
+    pdf.setFont('helvetica', bold ? 'bold' : 'normal');
+    pdf.setFontSize(size);
+    pdf.text(txt, x, yy);
+  }
+
+  function moeda(v: number) {
+    return `R$ ${v.toFixed(2)}`;
+  }
+
+  function desenharCard(
+    x: number,
+    yy: number,
+    w: number,
+    h: number,
+    titulo: string,
+    valor: string,
+    cor: [number, number, number]
+  ) {
+    pdf.setFillColor(cor[0], cor[1], cor[2]);
+    pdf.roundedRect(x, yy, w, h, 3, 3, 'F');
+
+    pdf.setTextColor(220, 252, 231);
+    texto(titulo, x + 4, yy + 7, 8, false);
+
+    pdf.setTextColor(255, 255, 255);
+    texto(valor, x + 4, yy + 17, 12, true);
+  }
+
+  function tituloSecao(titulo: string) {
+    novaPaginaSePreciso(14);
+    pdf.setTextColor(255, 255, 255);
+    texto(titulo, margem, y, 13, true);
+    y += 8;
+  }
+
+  desenharFundo();
+
+  pdf.setTextColor(255, 255, 255);
+  texto('Sustenta', margem, y, 20, true);
+
+  pdf.setTextColor(148, 163, 184);
+  texto('Relatório de Consumo', margem, y + 7, 10);
+
+  pdf.setTextColor(255, 255, 255);
+  pdf.setFont('helvetica', 'bold');
+  pdf.setFontSize(15);
+  pdf.text(data.mesLabel, pageW - margem, y, { align: 'right' });
+
+  pdf.setTextColor(148, 163, 184);
+  pdf.setFont('helvetica', 'normal');
+  pdf.setFontSize(9);
+  pdf.text(data.usuario?.nome || 'Usuário', pageW - margem, y + 7, { align: 'right' });
+  pdf.text(`${data.usuario?.cidade || 'Cidade'}, ${data.usuario?.estado || 'UF'}`, pageW - margem, y + 13, { align: 'right' });
+
+  y += 24;
+
+  pdf.setDrawColor(51, 65, 85);
+  pdf.line(margem, y, pageW - margem, y);
+
+  y += 10;
+
+  const cardW = (largura - 9) / 4;
+
+  desenharCard(margem, y, cardW, 24, 'Total Gasto', moeda(data.totalGeral), [109, 40, 217]);
+  desenharCard(margem + cardW + 3, y, cardW, 24, 'Score', `${data.scoreMes}/100`, [22, 163, 74]);
+  desenharCard(margem + (cardW + 3) * 2, y, cardW, 24, 'Nível', data.nivel, [13, 148, 136]);
+  desenharCard(margem + (cardW + 3) * 3, y, cardW, 24, 'Registros', String(data.registros.length), [37, 99, 235]);
+
+  y += 36;
+
+  novaPaginaSePreciso(42);
+
+  pdf.setFillColor(15, 23, 42);
+  pdf.roundedRect(margem, y, largura, 38, 3, 3, 'F');
+
+  pdf.setTextColor(148, 163, 184);
+  texto('Resumo do mês', margem + 5, y + 8, 10, true);
+
+  pdf.setTextColor(255, 255, 255);
+  texto(`Energia: ${moeda(data.totalEnergia)}`, margem + 5, y + 18, 10);
+  texto(`Água: ${moeda(data.totalAgua)}`, margem + 5, y + 27, 10);
+  texto(`Outros: ${moeda(data.totalOutro)}`, margem + 85, y + 18, 10);
+
+  const tendencia = data.scoreMes - data.scoreAnterior;
+  const tendenciaTxt =
+    tendencia > 0
+      ? `+${tendencia} pontos vs. mês anterior`
+      : `${tendencia} pontos vs. mês anterior`;
+
+  texto(`Tendência: ${tendenciaTxt}`, margem + 85, y + 27, 10);
+
+  y += 50;
+
+  if (data.historico.length > 0) {
+    tituloSecao('Evolução dos Gastos');
+
+    pdf.setFillColor(15, 23, 42);
+    pdf.roundedRect(margem, y, largura, 9, 2, 2, 'F');
+
+    pdf.setTextColor(148, 163, 184);
+    texto('Mês', margem + 3, y + 6, 8, true);
+    texto('Total', margem + 55, y + 6, 8, true);
+    texto('Energia', margem + 95, y + 6, 8, true);
+    texto('Água', margem + 135, y + 6, 8, true);
+    texto('Score', margem + 168, y + 6, 8, true);
+
+    y += 11;
+
+    data.historico.forEach((h) => {
+      novaPaginaSePreciso(8);
+
+      pdf.setTextColor(226, 232, 240);
+      texto(h.label, margem + 3, y, 8);
+      texto(moeda(h.total), margem + 55, y, 8);
+
+      pdf.setTextColor(250, 204, 21);
+      texto(moeda(h.energia), margem + 95, y, 8);
+
+      pdf.setTextColor(96, 165, 250);
+      texto(moeda(h.agua), margem + 135, y, 8);
+
+      pdf.setTextColor(52, 211, 153);
+      texto(String(h.score), margem + 168, y, 8);
+
+      y += 7;
+    });
+
+    y += 8;
+  }
+
+  if (data.maioresGastos.length > 0) {
+    tituloSecao('Top Gastos do Mês');
+
+    data.maioresGastos.forEach((r, i) => {
+      novaPaginaSePreciso(9);
+
+      pdf.setTextColor(226, 232, 240);
+      texto(`${i + 1}. ${r.descricao || r.subcategoria || r.categoria}`, margem, y, 9);
+
+      pdf.setTextColor(255, 255, 255);
+      pdf.setFont('helvetica', 'bold');
+      pdf.setFontSize(9);
+      pdf.text(moeda(r.valor), pageW - margem, y, { align: 'right' });
+
+      y += 8;
+    });
+
+    y += 6;
+  }
+
+  if (data.alertas.length > 0) {
+    tituloSecao('Alertas');
+
+    data.alertas.forEach((alerta) => {
+      novaPaginaSePreciso(12);
+      const linhas = pdf.splitTextToSize(`• ${alerta}`, largura);
+
+      pdf.setTextColor(252, 165, 165);
+      pdf.setFontSize(9);
+      pdf.text(linhas, margem, y);
+
+      y += linhas.length * 5 + 2;
+    });
+
+    y += 4;
+  }
+
+  if (data.dicas.length > 0) {
+    tituloSecao('Dicas');
+
+    data.dicas.forEach((dica) => {
+      novaPaginaSePreciso(12);
+      const linhas = pdf.splitTextToSize(`• ${dica}`, largura);
+
+      pdf.setTextColor(167, 243, 208);
+      pdf.setFontSize(9);
+      pdf.text(linhas, margem, y);
+
+      y += linhas.length * 5 + 2;
+    });
+
+    y += 4;
+  }
+
+  if (data.registros.length > 0) {
+    tituloSecao('Todos os Registros');
+
+    data.registros.forEach((r) => {
+      novaPaginaSePreciso(12);
+
+      const desc = r.descricao || r.subcategoria || r.categoria;
+      const linhas = pdf.splitTextToSize(desc, 110);
+
+      pdf.setTextColor(226, 232, 240);
+      pdf.setFontSize(8);
+      pdf.text(linhas, margem, y);
+
+      pdf.setTextColor(148, 163, 184);
+      pdf.text(r.subcategoria || r.categoria, margem + 115, y);
+
+      pdf.setTextColor(255, 255, 255);
+      pdf.text(moeda(r.valor), pageW - margem, y, { align: 'right' });
+
+      y += Math.max(8, linhas.length * 5);
+    });
+
+    y += 4;
+
+    novaPaginaSePreciso(10);
+    pdf.setDrawColor(51, 65, 85);
+    pdf.line(margem, y, pageW - margem, y);
+
+    y += 7;
+
+    pdf.setTextColor(255, 255, 255);
+    texto('Total', margem, y, 10, true);
+    pdf.text(moeda(data.totalGeral), pageW - margem, y, { align: 'right' });
+  }
+
+  pdf.setTextColor(71, 85, 105);
+  pdf.setFontSize(8);
+  pdf.text(`Gerado pelo Sustenta em ${new Date().toLocaleDateString('pt-BR')}`, margem, pageH - 8);
+  pdf.text('sustenta.app', pageW - margem, pageH - 8, { align: 'right' });
+
+  pdf.save(`Sustenta_Relatorio_${mes}.pdf`);
+}
 function DonutChart({
   energia,
   agua,
@@ -348,6 +538,7 @@ function ScoreGauge({ score }: { score: number }) {
     </div>
   );
 }
+
 function ReportPreview({ data }: { data: ReportData }) {
   const tendencia = data.scoreMes - data.scoreAnterior;
 
@@ -380,30 +571,10 @@ function ReportPreview({ data }: { data: ReportData }) {
 
       <div className="grid grid-cols-4 gap-3">
         {[
-          {
-            label: 'Total Gasto',
-            value: `R$ ${data.totalGeral.toFixed(2)}`,
-            icon: BarChart2,
-            color: 'from-violet-600 to-violet-800',
-          },
-          {
-            label: 'Score',
-            value: `${data.scoreMes}/100`,
-            icon: Star,
-            color: 'from-green-600 to-green-800',
-          },
-          {
-            label: 'Nível',
-            value: data.nivel,
-            icon: Leaf,
-            color: 'from-emerald-600 to-teal-800',
-          },
-          {
-            label: 'Registros',
-            value: `${data.registros.length}`,
-            icon: FileText,
-            color: 'from-blue-600 to-blue-800',
-          },
+          { label: 'Total Gasto', value: `R$ ${data.totalGeral.toFixed(2)}`, icon: BarChart2, color: 'from-violet-600 to-violet-800' },
+          { label: 'Score', value: `${data.scoreMes}/100`, icon: Star, color: 'from-green-600 to-green-800' },
+          { label: 'Nível', value: data.nivel, icon: Leaf, color: 'from-emerald-600 to-teal-800' },
+          { label: 'Registros', value: `${data.registros.length}`, icon: FileText, color: 'from-blue-600 to-blue-800' },
         ].map((c) => (
           <div key={c.label} className={clsx('rounded-xl p-3 bg-gradient-to-br', c.color)}>
             <c.icon size={16} className="text-white/70 mb-1" />
@@ -592,7 +763,6 @@ function ReportPreview({ data }: { data: ReportData }) {
     </div>
   );
 }
-
 function CustomTooltip({ active, payload, label }: any) {
   if (!active || !payload?.length) return null;
 
@@ -636,13 +806,11 @@ export default function ReportsPage() {
     }
 
     document.addEventListener('mousedown', handler);
-
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
   async function carregarDados() {
     const uid = auth.currentUser?.uid;
-
     if (!uid) return;
 
     setLoading(true);
@@ -739,7 +907,6 @@ export default function ReportsPage() {
         .reduce((s, r) => s + r.valor, 0);
 
       const scoreAnterior = regAnt.length > 0 ? calcularScore(eAnt, aAnt, oAnt) : scoreMes;
-
       const xpTotal = registros.length * 100;
       const nivel = getNivel(xpTotal);
       const maioresGastos = [...registros].sort((a, b) => b.valor - a.valor).slice(0, 5);
@@ -816,17 +983,16 @@ export default function ReportsPage() {
     setGenerating(true);
 
     try {
-      if (!previewOpen) {
-        setPreviewOpen(true);
-        await new Promise((resolve) => setTimeout(resolve, 700));
-      } else {
-        await new Promise((resolve) => setTimeout(resolve, 300));
-      }
-
-      await gerarPDF('report-preview', reportData.mes);
+      await gerarPDF('report-preview', reportData.mes, reportData);
     } catch (error) {
       console.error('Erro ao gerar PDF:', error);
-      alert('Não foi possível gerar o PDF. Tente novamente.');
+
+      const mensagem =
+        error instanceof Error
+          ? error.message
+          : 'Erro desconhecido ao gerar PDF.';
+
+      alert(`Não foi possível gerar o PDF.\n\nDetalhes: ${mensagem}`);
     } finally {
       setGenerating(false);
     }
@@ -837,11 +1003,11 @@ export default function ReportsPage() {
 
     const txt = encodeURIComponent(
       `📊 *Relatório Sustenta — ${reportData.mesLabel}*\n\n` +
-        `💰 Total gasto: R$ ${reportData.totalGeral.toFixed(2)}\n` +
-        `🌱 Score: ${reportData.scoreMes}/100\n` +
-        `⚡ Energia: R$ ${reportData.totalEnergia.toFixed(2)}\n` +
-        `💧 Água: R$ ${reportData.totalAgua.toFixed(2)}\n\n` +
-        `Gerado pelo Sustenta 🍃`
+      `💰 Total gasto: R$ ${reportData.totalGeral.toFixed(2)}\n` +
+      `🌱 Score: ${reportData.scoreMes}/100\n` +
+      `⚡ Energia: R$ ${reportData.totalEnergia.toFixed(2)}\n` +
+      `💧 Água: R$ ${reportData.totalAgua.toFixed(2)}\n\n` +
+      `Gerado pelo Sustenta 🍃`
     );
 
     window.open(`https://wa.me/?text=${txt}`, '_blank');
@@ -862,7 +1028,8 @@ export default function ReportsPage() {
     agua: '#3b82f6',
     score: '#a78bfa',
   };
-    return (
+
+  return (
     <div className={clsx('min-h-screen p-6 space-y-6', darkMode ? 'bg-slate-900' : 'bg-slate-50')}>
       <motion.div
         initial={{ opacity: 0, y: -12 }}
@@ -1018,8 +1185,7 @@ export default function ReportsPage() {
           </motion.button>
         </div>
       </motion.div>
-
-      <AnimatePresence mode="wait">
+            <AnimatePresence mode="wait">
         {!reportData && !loading && (
           <motion.div
             key="empty"
@@ -1028,14 +1194,20 @@ export default function ReportsPage() {
             exit={{ opacity: 0 }}
             className={clsx(cardBase, 'flex flex-col items-center justify-center py-16 gap-4 text-center')}
           >
-            <div className={clsx('w-16 h-16 rounded-2xl flex items-center justify-center', darkMode ? 'bg-slate-700' : 'bg-slate-100')}>
+            <div
+              className={clsx(
+                'w-16 h-16 rounded-2xl flex items-center justify-center',
+                darkMode ? 'bg-slate-700' : 'bg-slate-100'
+              )}
+            >
               <FileText size={28} className="text-emerald-500" />
             </div>
 
             <div>
               <p className={clsx('font-semibold text-base', textPrimary)}>Nenhum relatório gerado</p>
               <p className={clsx('text-sm mt-1', textSecondary)}>
-                Selecione um período e clique em <span className="text-emerald-500 font-medium">Visualizar</span>.
+                Selecione um período e clique em{' '}
+                <span className="text-emerald-500 font-medium">Visualizar</span>.
               </p>
             </div>
           </motion.div>
@@ -1050,7 +1222,12 @@ export default function ReportsPage() {
             transition={{ duration: 0.35 }}
             className="space-y-4"
           >
-            <div className={clsx('flex gap-1 p-1 rounded-xl w-fit', darkMode ? 'bg-slate-800' : 'bg-slate-100')}>
+            <div
+              className={clsx(
+                'flex gap-1 p-1 rounded-xl w-fit',
+                darkMode ? 'bg-slate-800' : 'bg-slate-100'
+              )}
+            >
               {[
                 { id: 'resumo', label: 'Resumo', icon: BarChart2 },
                 { id: 'evolucao', label: 'Evolução', icon: TrendingUp },
@@ -1086,10 +1263,34 @@ export default function ReportsPage() {
                 >
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                     {[
-                      { label: 'Total Gasto', value: `R$ ${reportData.totalGeral.toFixed(2)}`, icon: BarChart2, color: 'text-violet-400', bg: darkMode ? 'bg-violet-900/20' : 'bg-violet-50' },
-                      { label: 'Score', value: `${reportData.scoreMes}/100`, icon: Star, color: 'text-emerald-400', bg: darkMode ? 'bg-emerald-900/20' : 'bg-emerald-50' },
-                      { label: 'Registros', value: `${reportData.registros.length}`, icon: FileText, color: 'text-blue-400', bg: darkMode ? 'bg-blue-900/20' : 'bg-blue-50' },
-                      { label: 'Nível', value: reportData.nivel, icon: Leaf, color: 'text-teal-400', bg: darkMode ? 'bg-teal-900/20' : 'bg-teal-50' },
+                      {
+                        label: 'Total Gasto',
+                        value: `R$ ${reportData.totalGeral.toFixed(2)}`,
+                        icon: BarChart2,
+                        color: 'text-violet-400',
+                        bg: darkMode ? 'bg-violet-900/20' : 'bg-violet-50',
+                      },
+                      {
+                        label: 'Score',
+                        value: `${reportData.scoreMes}/100`,
+                        icon: Star,
+                        color: 'text-emerald-400',
+                        bg: darkMode ? 'bg-emerald-900/20' : 'bg-emerald-50',
+                      },
+                      {
+                        label: 'Registros',
+                        value: `${reportData.registros.length}`,
+                        icon: FileText,
+                        color: 'text-blue-400',
+                        bg: darkMode ? 'bg-blue-900/20' : 'bg-blue-50',
+                      },
+                      {
+                        label: 'Nível',
+                        value: reportData.nivel,
+                        icon: Leaf,
+                        color: 'text-teal-400',
+                        bg: darkMode ? 'bg-teal-900/20' : 'bg-teal-50',
+                      },
                     ].map((c, i) => (
                       <motion.div
                         key={c.label}
@@ -1098,7 +1299,12 @@ export default function ReportsPage() {
                         transition={{ delay: i * 0.06 }}
                         className={clsx(cardBase, c.bg, 'flex items-center gap-3')}
                       >
-                        <div className={clsx('w-8 h-8 rounded-lg flex items-center justify-center', darkMode ? 'bg-slate-700' : 'bg-white shadow-sm')}>
+                        <div
+                          className={clsx(
+                            'w-8 h-8 rounded-lg flex items-center justify-center',
+                            darkMode ? 'bg-slate-700' : 'bg-white shadow-sm'
+                          )}
+                        >
                           <c.icon size={16} className={c.color} />
                         </div>
 
@@ -1140,33 +1346,57 @@ export default function ReportsPage() {
                     </div>
 
                     <div className={clsx(cardBase)}>
-                      <p className={clsx('text-xs font-medium uppercase tracking-wider mb-4', textMuted)}>Distribuição por Categoria</p>
-                      <DonutChart energia={reportData.totalEnergia} agua={reportData.totalAgua} outro={reportData.totalOutro} total={reportData.totalGeral} />
+                      <p className={clsx('text-xs font-medium uppercase tracking-wider mb-4', textMuted)}>
+                        Distribuição por Categoria
+                      </p>
+
+                      <DonutChart
+                        energia={reportData.totalEnergia}
+                        agua={reportData.totalAgua}
+                        outro={reportData.totalOutro}
+                        total={reportData.totalGeral}
+                      />
                     </div>
                   </div>
 
                   {(reportData.alertas.length > 0 || reportData.dicas.length > 0) && (
                     <div className="grid sm:grid-cols-2 gap-4">
                       {reportData.alertas.length > 0 && (
-                        <div className={clsx(cardBase, 'border-red-800/40 space-y-2', darkMode ? 'bg-red-950/20' : 'bg-red-50')}>
+                        <div
+                          className={clsx(
+                            cardBase,
+                            'border-red-800/40 space-y-2',
+                            darkMode ? 'bg-red-950/20' : 'bg-red-50'
+                          )}
+                        >
                           <p className="text-xs font-medium text-red-400 uppercase tracking-wider flex items-center gap-1">
                             <AlertTriangle size={12} /> Alertas ({reportData.alertas.length})
                           </p>
 
                           {reportData.alertas.map((a, i) => (
-                            <p key={i} className={clsx('text-xs', darkMode ? 'text-red-300' : 'text-red-600')}>{a}</p>
+                            <p key={i} className={clsx('text-xs', darkMode ? 'text-red-300' : 'text-red-600')}>
+                              {a}
+                            </p>
                           ))}
                         </div>
                       )}
 
                       {reportData.dicas.length > 0 && (
-                        <div className={clsx(cardBase, 'border-emerald-800/40 space-y-2', darkMode ? 'bg-emerald-950/20' : 'bg-emerald-50')}>
+                        <div
+                          className={clsx(
+                            cardBase,
+                            'border-emerald-800/40 space-y-2',
+                            darkMode ? 'bg-emerald-950/20' : 'bg-emerald-50'
+                          )}
+                        >
                           <p className="text-xs font-medium text-emerald-400 uppercase tracking-wider flex items-center gap-1">
                             <CheckCircle size={12} /> Dicas ({reportData.dicas.length})
                           </p>
 
                           {reportData.dicas.map((d, i) => (
-                            <p key={i} className={clsx('text-xs', darkMode ? 'text-emerald-300' : 'text-emerald-700')}>{d}</p>
+                            <p key={i} className={clsx('text-xs', darkMode ? 'text-emerald-300' : 'text-emerald-700')}>
+                              {d}
+                            </p>
                           ))}
                         </div>
                       )}
@@ -1186,7 +1416,9 @@ export default function ReportsPage() {
                 >
                   <div className={clsx(cardBase, 'space-y-4')}>
                     <div className="flex items-center justify-between">
-                      <p className={clsx('text-xs font-medium uppercase tracking-wider', textMuted)}>Evolução — últimos 6 meses</p>
+                      <p className={clsx('text-xs font-medium uppercase tracking-wider', textMuted)}>
+                        Evolução — últimos 6 meses
+                      </p>
 
                       <div className={clsx('flex gap-1 p-1 rounded-lg', darkMode ? 'bg-slate-700' : 'bg-slate-100')}>
                         {(['total', 'score'] as const).map((m) => (
@@ -1211,7 +1443,12 @@ export default function ReportsPage() {
                     <ResponsiveContainer width="100%" height={260}>
                       <LineChart data={reportData.historico} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
                         <CartesianGrid strokeDasharray="3 3" stroke={darkMode ? '#1e293b' : '#f1f5f9'} />
-                        <XAxis dataKey="label" tick={{ fill: darkMode ? '#64748b' : '#94a3b8', fontSize: 11 }} axisLine={false} tickLine={false} />
+                        <XAxis
+                          dataKey="label"
+                          tick={{ fill: darkMode ? '#64748b' : '#94a3b8', fontSize: 11 }}
+                          axisLine={false}
+                          tickLine={false}
+                        />
                         <YAxis
                           tick={{ fill: darkMode ? '#64748b' : '#94a3b8', fontSize: 11 }}
                           axisLine={false}
@@ -1224,26 +1461,71 @@ export default function ReportsPage() {
 
                         {chartMetric === 'total' ? (
                           <>
-                            <Line type="monotone" dataKey="total" name="Total" stroke={chartColors.total} strokeWidth={2} dot={{ r: 4, fill: chartColors.total }} activeDot={{ r: 6 }} />
-                            <Line type="monotone" dataKey="energia" name="Energia" stroke={chartColors.energia} strokeWidth={2} dot={{ r: 3, fill: chartColors.energia }} activeDot={{ r: 5 }} strokeDasharray="4 2" />
-                            <Line type="monotone" dataKey="agua" name="Água" stroke={chartColors.agua} strokeWidth={2} dot={{ r: 3, fill: chartColors.agua }} activeDot={{ r: 5 }} strokeDasharray="4 2" />
+                            <Line
+                              type="monotone"
+                              dataKey="total"
+                              name="Total"
+                              stroke={chartColors.total}
+                              strokeWidth={2}
+                              dot={{ r: 4, fill: chartColors.total }}
+                              activeDot={{ r: 6 }}
+                            />
+                            <Line
+                              type="monotone"
+                              dataKey="energia"
+                              name="Energia"
+                              stroke={chartColors.energia}
+                              strokeWidth={2}
+                              dot={{ r: 3, fill: chartColors.energia }}
+                              activeDot={{ r: 5 }}
+                              strokeDasharray="4 2"
+                            />
+                            <Line
+                              type="monotone"
+                              dataKey="agua"
+                              name="Água"
+                              stroke={chartColors.agua}
+                              strokeWidth={2}
+                              dot={{ r: 3, fill: chartColors.agua }}
+                              activeDot={{ r: 5 }}
+                              strokeDasharray="4 2"
+                            />
                           </>
                         ) : (
-                          <Line type="monotone" dataKey="score" name="Score" stroke={chartColors.score} strokeWidth={2.5} dot={{ r: 4, fill: chartColors.score }} activeDot={{ r: 6 }} />
+                          <Line
+                            type="monotone"
+                            dataKey="score"
+                            name="Score"
+                            stroke={chartColors.score}
+                            strokeWidth={2.5}
+                            dot={{ r: 4, fill: chartColors.score }}
+                            activeDot={{ r: 6 }}
+                          />
                         )}
                       </LineChart>
                     </ResponsiveContainer>
                   </div>
 
                   <div className={clsx(cardBase, 'space-y-3')}>
-                    <p className={clsx('text-xs font-medium uppercase tracking-wider', textMuted)}>Tabela Comparativa</p>
+                    <p className={clsx('text-xs font-medium uppercase tracking-wider', textMuted)}>
+                      Tabela Comparativa
+                    </p>
 
                     <div className="overflow-x-auto">
                       <table className="w-full text-xs">
                         <thead>
                           <tr className={clsx('border-b', darkMode ? 'border-slate-700' : 'border-slate-200')}>
                             {['Mês', 'Total', 'Energia', 'Água', 'Outros', 'Score'].map((h) => (
-                              <th key={h} className={clsx('pb-2 font-medium', h === 'Mês' ? 'text-left' : 'text-right', textMuted)}>{h}</th>
+                              <th
+                                key={h}
+                                className={clsx(
+                                  'pb-2 font-medium',
+                                  h === 'Mês' ? 'text-left' : 'text-right',
+                                  textMuted
+                                )}
+                              >
+                                {h}
+                              </th>
                             ))}
                           </tr>
                         </thead>
@@ -1254,21 +1536,44 @@ export default function ReportsPage() {
                               key={h.mes}
                               className={clsx(
                                 'border-b last:border-0 transition-colors',
-                                darkMode ? 'border-slate-700/40 hover:bg-slate-700/30' : 'border-slate-100 hover:bg-slate-50',
+                                darkMode
+                                  ? 'border-slate-700/40 hover:bg-slate-700/30'
+                                  : 'border-slate-100 hover:bg-slate-50',
                                 h.mes === mesSelecionado && (darkMode ? 'bg-emerald-900/20' : 'bg-emerald-50')
                               )}
                             >
                               <td className={clsx('py-2 font-medium', textPrimary)}>
                                 {h.label}
                                 {h.mes === mesSelecionado && (
-                                  <span className="ml-1.5 text-[10px] bg-emerald-600 text-white px-1.5 py-0.5 rounded-full">atual</span>
+                                  <span className="ml-1.5 text-[10px] bg-emerald-600 text-white px-1.5 py-0.5 rounded-full">
+                                    atual
+                                  </span>
                                 )}
                               </td>
-                              <td className={clsx('py-2 text-right font-semibold', textPrimary)}>R$ {h.total.toFixed(2)}</td>
-                              <td className="py-2 text-right text-yellow-500">R$ {h.energia.toFixed(2)}</td>
-                              <td className="py-2 text-right text-blue-400">R$ {h.agua.toFixed(2)}</td>
-                              <td className="py-2 text-right text-violet-400">R$ {h.outro.toFixed(2)}</td>
-                              <td className={clsx('py-2 text-right font-bold', h.score >= 75 ? 'text-emerald-400' : h.score >= 50 ? 'text-yellow-400' : 'text-red-400')}>{h.score}</td>
+                              <td className={clsx('py-2 text-right font-semibold', textPrimary)}>
+                                R$ {h.total.toFixed(2)}
+                              </td>
+                              <td className="py-2 text-right text-yellow-500">
+                                R$ {h.energia.toFixed(2)}
+                              </td>
+                              <td className="py-2 text-right text-blue-400">
+                                R$ {h.agua.toFixed(2)}
+                              </td>
+                              <td className="py-2 text-right text-violet-400">
+                                R$ {h.outro.toFixed(2)}
+                              </td>
+                              <td
+                                className={clsx(
+                                  'py-2 text-right font-bold',
+                                  h.score >= 75
+                                    ? 'text-emerald-400'
+                                    : h.score >= 50
+                                      ? 'text-yellow-400'
+                                      : 'text-red-400'
+                                )}
+                              >
+                                {h.score}
+                              </td>
                             </tr>
                           ))}
                         </tbody>
@@ -1289,7 +1594,8 @@ export default function ReportsPage() {
                   <div className={clsx(cardBase, 'space-y-3')}>
                     <div className="flex items-center justify-between">
                       <p className={clsx('text-xs font-medium uppercase tracking-wider', textMuted)}>
-                        {reportData.registros.length} registro{reportData.registros.length !== 1 ? 's' : ''} — {reportData.mesLabel}
+                        {reportData.registros.length} registro
+                        {reportData.registros.length !== 1 ? 's' : ''} — {reportData.mesLabel}
                       </p>
 
                       <button
@@ -1301,21 +1607,40 @@ export default function ReportsPage() {
                     </div>
 
                     {reportData.registros.length === 0 ? (
-                      <p className={clsx('text-sm text-center py-8', textSecondary)}>Nenhum registro encontrado para {reportData.mesLabel}.</p>
+                      <p className={clsx('text-sm text-center py-8', textSecondary)}>
+                        Nenhum registro encontrado para {reportData.mesLabel}.
+                      </p>
                     ) : (
                       <div className="overflow-x-auto">
                         <table className="w-full text-xs">
                           <thead>
                             <tr className={clsx('border-b', darkMode ? 'border-slate-700' : 'border-slate-200')}>
                               {['Descrição', 'Categoria', 'Subcategoria', 'Valor'].map((h) => (
-                                <th key={h} className={clsx('pb-2 font-medium text-left', h === 'Valor' ? 'text-right' : '', textMuted)}>{h}</th>
+                                <th
+                                  key={h}
+                                  className={clsx(
+                                    'pb-2 font-medium text-left',
+                                    h === 'Valor' ? 'text-right' : '',
+                                    textMuted
+                                  )}
+                                >
+                                  {h}
+                                </th>
                               ))}
                             </tr>
                           </thead>
 
                           <tbody>
                             {reportData.registros.map((r) => (
-                              <tr key={r.id} className={clsx('border-b last:border-0', darkMode ? 'border-slate-700/40 hover:bg-slate-700/20' : 'border-slate-100 hover:bg-slate-50')}>
+                              <tr
+                                key={r.id}
+                                className={clsx(
+                                  'border-b last:border-0',
+                                  darkMode
+                                    ? 'border-slate-700/40 hover:bg-slate-700/20'
+                                    : 'border-slate-100 hover:bg-slate-50'
+                                )}
+                              >
                                 <td className={clsx('py-2', textPrimary)}>{r.descricao || '—'}</td>
                                 <td className="py-2">
                                   <span
@@ -1332,13 +1657,19 @@ export default function ReportsPage() {
                                   </span>
                                 </td>
                                 <td className={clsx('py-2', textSecondary)}>{r.subcategoria || '—'}</td>
-                                <td className={clsx('py-2 text-right font-semibold', textPrimary)}>R$ {r.valor.toFixed(2)}</td>
+                                <td className={clsx('py-2 text-right font-semibold', textPrimary)}>
+                                  R$ {r.valor.toFixed(2)}
+                                </td>
                               </tr>
                             ))}
 
                             <tr className={clsx('border-t-2', darkMode ? 'border-slate-600' : 'border-slate-300')}>
-                              <td colSpan={3} className={clsx('pt-2 font-bold', textPrimary)}>Total</td>
-                              <td className="pt-2 text-right font-bold text-emerald-500">R$ {reportData.totalGeral.toFixed(2)}</td>
+                              <td colSpan={3} className={clsx('pt-2 font-bold', textPrimary)}>
+                                Total
+                              </td>
+                              <td className="pt-2 text-right font-bold text-emerald-500">
+                                R$ {reportData.totalGeral.toFixed(2)}
+                              </td>
                             </tr>
                           </tbody>
                         </table>
