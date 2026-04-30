@@ -72,7 +72,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <span className="text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">Sustenta</span>
         </div>
       )}
-
       {/* Nav */}
       <nav className="flex-1 px-4 py-4 space-y-8 overflow-y-auto">
         {menuGroups.map((group, idx) => (
