@@ -73,7 +73,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, onNavigate }) => 
     setCarregando(false);
   };
 
-  // Cadastro step 1
+  // Cadastro parte 1
   const handleRegisterStep1 = (e: React.FormEvent) => {
     e.preventDefault();
     if (!nome.trim())        { setErro('Informe seu nome.');                           return; }
@@ -83,7 +83,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, onNavigate }) => 
     setStep(2);
   };
 
-  // Cadastro step 2
+  // Cadastro parte 2
   const handleRegisterStep2 = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!estado) { setErro('Selecione seu estado no mapa.'); return; }
