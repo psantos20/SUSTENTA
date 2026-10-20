@@ -17,7 +17,7 @@ import { SobreNosPage } from './app/pages/SobreNosPage';
 import { PrivacidadePage } from './app/pages/PrivacidadePage';
 import EducationPage from './app/pages/EducationPage';
 import { TermosUsoPage } from './app/pages/TermosUsoPage';
-import { entrarNoGrupo } from './services/familia';
+import { buscarConvite, entrarNoGrupo, normalizarCodigo } from './services/familia';
 
 // 🔥 Firebase
 import { onAuthStateChanged, signOut } from "firebase/auth";
@@ -65,7 +65,14 @@ export default function App() {
     nivel: 1, xpAtual: 0, xpTotal: 1000, nome: 'Iniciante'
   });
 
-  const [convitePendente, setConvitePendente] = React.useState<string | null>(null);
+  // Convite via URL (?convite=CODIGO): lido uma vez e removido da barra de endereço.
+  const [convitePendente] = React.useState<string | null>(() => {
+    const codigo = new URLSearchParams(window.location.search).get('convite');
+    if (!codigo) return null;
+    window.history.replaceState({}, '', window.location.pathname);
+    return normalizarCodigo(codigo);
+  });
+  const conviteProcessado = React.useRef(false);
 
   // ESCUTA LOGIN DO FIREBASE
   React.useEffect(() => {
@@ -77,25 +84,28 @@ export default function App() {
     return () => unsubscribe();
   }, []);
 
-  // Convite via URL
   React.useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const codigo = params.get('convite');
-    if (codigo) {
-      setConvitePendente(codigo);
-      window.history.replaceState({}, '', window.location.pathname);
-    }
-  }, []);
+    if (!isAuthenticated || !convitePendente || conviteProcessado.current) return;
+    conviteProcessado.current = true;
 
-  React.useEffect(() => {
-    if (!isAuthenticated || !convitePendente) return;
+    // Nunca entra em um grupo automaticamente: um link malicioso poderia
+    // colocar a pessoa num grupo que enxerga os dados dela. Pede confirmação.
+    const codigo = convitePendente;
 
-    entrarNoGrupo(convitePendente)
-      .then(() => {
-        setConvitePendente(null);
-        setCurrentPage('profile');
+    buscarConvite(codigo)
+      .then((convite) => {
+        if (!convite) {
+          window.alert('Este convite é inválido ou expirou.');
+          return;
+        }
+        const aceitar = window.confirm(
+          `Você foi convidado para o grupo familiar "${convite.nomeGrupo}".\n\n` +
+          'Membros do grupo poderão ver seu nome, nível e os dados que você escolher compartilhar. Deseja entrar?'
+        );
+        if (!aceitar) return;
+        return entrarNoGrupo(codigo).then(() => setCurrentPage('profile'));
       })
-      .catch(() => setConvitePendente(null));
+      .catch((e) => window.alert(e?.message || 'Não foi possível entrar no grupo.'));
   }, [isAuthenticated, convitePendente]);
 
   React.useEffect(() => {

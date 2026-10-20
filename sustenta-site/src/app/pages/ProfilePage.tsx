@@ -62,6 +62,8 @@ import {
   type GrupoFamilia,
   type MembroFamilia,
 } from '../../services/familia';
+import { contaUsaSenha, excluirConta, exportarMeusDados } from '../../services/conta';
+import { LIMITES, limparTexto, validarSenha } from '../../services/validacao';
 
 interface UsuarioData {
   nome: string;
@@ -301,6 +303,10 @@ export const ProfilePage: React.FC = () => {
 
   const [emailVerificado, setEmailVerificado] = React.useState(false);
   const [modal2FA, setModal2FA] = React.useState(false);
+  const [modalExcluir, setModalExcluir] = React.useState(false);
+  const [senhaExclusao, setSenhaExclusao] = React.useState('');
+  const [confirmacaoExclusao, setConfirmacaoExclusao] = React.useState('');
+  const [excluindo, setExcluindo] = React.useState(false);
   const [enviando2FA, setEnviando2FA] = React.useState(false);
   const [verificando2FA, setVerificando2FA] = React.useState(false);
   const [linkEnviado, setLinkEnviado] = React.useState(false);
@@ -434,12 +440,12 @@ export const ProfilePage: React.FC = () => {
     setSalvando(true);
 
     try {
-      await updateDoc(doc(db, 'usuarios', user.uid), {
-        nome: formNome.trim(),
-        telefone: formTelefone.trim(),
-      });
+      const nome = limparTexto(formNome, LIMITES.nome);
+      const telefone = limparTexto(formTelefone, LIMITES.telefone);
 
-      setUsuario((p) => (p ? { ...p, nome: formNome.trim(), telefone: formTelefone.trim() } : p));
+      await updateDoc(doc(db, 'usuarios', user.uid), { nome, telefone });
+
+      setUsuario((p) => (p ? { ...p, nome, telefone } : p));
       fecharModal();
       ok('Dados atualizados!');
     } catch {
@@ -467,8 +473,8 @@ export const ProfilePage: React.FC = () => {
 
     try {
       await updateDoc(doc(db, 'usuarios', user.uid), {
-        estado: formEstado,
-        cidade: formCidade,
+        estado: limparTexto(formEstado, 2).toUpperCase(),
+        cidade: limparTexto(formCidade, LIMITES.cidade),
       });
 
       setUsuario((p) => (p ? { ...p, estado: formEstado, cidade: formCidade } : p));
@@ -487,8 +493,9 @@ export const ProfilePage: React.FC = () => {
       return;
     }
 
-    if (novaSenha.length < 6) {
-      err('Minimo 6 caracteres.');
+    const erroSenha = validarSenha(novaSenha);
+    if (erroSenha) {
+      err(erroSenha);
       return;
     }
 
@@ -512,6 +519,37 @@ export const ProfilePage: React.FC = () => {
       err('Senha atual incorreta.');
     } finally {
       setSalvando(false);
+    }
+  };
+
+  const handleExportarDados = async () => {
+    try {
+      await exportarMeusDados();
+      ok('Arquivo com seus dados gerado!');
+    } catch {
+      err('Nao foi possivel exportar seus dados.');
+    }
+  };
+
+  const handleExcluirConta = async () => {
+    if (confirmacaoExclusao.trim().toUpperCase() !== 'EXCLUIR') {
+      err('Digite EXCLUIR para confirmar.');
+      return;
+    }
+
+    setExcluindo(true);
+    setErro('');
+
+    try {
+      await excluirConta(senhaExclusao);
+      // onAuthStateChanged leva o usuário de volta ao login.
+    } catch (e) {
+      const code = (e as { code?: string })?.code;
+      if (code === 'auth/wrong-password' || code === 'auth/invalid-credential') err('Senha incorreta.');
+      else if (code === 'auth/popup-closed-by-user') err('Confirmacao cancelada.');
+      else err((e as Error)?.message || 'Erro ao excluir a conta. Tente novamente.');
+    } finally {
+      setExcluindo(false);
     }
   };
 
@@ -1260,6 +1298,7 @@ export const ProfilePage: React.FC = () => {
                     isVerified: emailVerificado,
                   },
                   { icon: Info, label: 'Dados Compartilhados', desc: 'Gerencie o que a familia visualiza', toggle: false, onClick: () => setModalDados(true) },
+                  { icon: Save, label: 'Baixar Meus Dados', desc: 'Copia de todos os seus dados (LGPD)', toggle: false, onClick: handleExportarDados },
                 ],
               },
               {
@@ -1267,7 +1306,7 @@ export const ProfilePage: React.FC = () => {
                 items: [
                   { icon: HelpCircle, label: 'Central de Ajuda', desc: 'Duvidas frequentes e suporte', toggle: false },
                   { icon: Star, label: 'Avaliar o App', desc: 'Ajude-nos a melhorar o Sustenta', toggle: false },
-                  { icon: LogOut, label: 'Excluir Conta', desc: 'Remover permanentemente seus dados', toggle: false, isDanger: true },
+                  { icon: LogOut, label: 'Excluir Conta', desc: 'Remover permanentemente seus dados', toggle: false, isDanger: true, onClick: () => { setSenhaExclusao(''); setConfirmacaoExclusao(''); setErro(''); setModalExcluir(true); } },
                 ],
               },
             ].map((group, idx) => (
@@ -1509,6 +1548,49 @@ export const ProfilePage: React.FC = () => {
                   </button>
                   <button onClick={handleVerificarEmail} disabled={verificando2FA} className="flex-1 py-3 bg-emerald-600 text-white rounded-2xl font-bold text-sm">
                     {verificando2FA ? 'Verificando...' : 'Verificar'}
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {modalExcluir && (
+          <>
+            <motion.div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => !excluindo && setModalExcluir(false)} />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-full max-w-md mx-4"
+            >
+              <div className="bg-white dark:bg-slate-800 rounded-3xl shadow-2xl overflow-hidden p-6 space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-bold text-red-600 dark:text-red-400">Excluir conta</h3>
+                  <button onClick={() => setModalExcluir(false)} disabled={excluindo} className="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-700">
+                    <X className="w-5 h-5 text-slate-400" />
+                  </button>
+                </div>
+                <p className="text-sm text-slate-500 dark:text-slate-400">
+                  Isso apaga permanentemente seu perfil, registros de consumo, habitos, posicao no ranking e sua participacao no grupo familiar
+                  (se voce for o dono, o grupo sera excluido). Nao da para desfazer.
+                </p>
+                {contaUsaSenha() ? (
+                  <Campo label="Sua senha" icon={Lock} value={senhaExclusao} onChange={setSenhaExclusao} type="password" />
+                ) : (
+                  <p className="text-xs text-slate-500 dark:text-slate-400">Vamos pedir para voce confirmar com sua conta Google.</p>
+                )}
+                <Campo label='Digite "EXCLUIR" para confirmar' icon={AlertCircle} value={confirmacaoExclusao} onChange={setConfirmacaoExclusao} placeholder="EXCLUIR" />
+                {erro && <p className="text-xs font-bold text-red-600">{erro}</p>}
+                <div className="flex gap-3">
+                  <button onClick={() => setModalExcluir(false)} disabled={excluindo} className="flex-1 py-3 border border-slate-200 dark:border-slate-600 rounded-2xl text-slate-600 dark:text-slate-300 font-semibold text-sm">
+                    Cancelar
+                  </button>
+                  <button onClick={handleExcluirConta} disabled={excluindo} className="flex-1 flex items-center justify-center gap-2 py-3 bg-red-600 hover:bg-red-700 text-white rounded-2xl font-bold text-sm disabled:opacity-60">
+                    {excluindo ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                    Excluir definitivamente
                   </button>
                 </div>
               </div>

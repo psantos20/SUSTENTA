@@ -14,9 +14,11 @@ import {
 } from 'recharts';
 import {
   collection, query, where, getDocs, doc, getDoc,
-  setDoc, updateDoc, arrayUnion, serverTimestamp, orderBy, limit,
+  setDoc, updateDoc, arrayUnion, serverTimestamp, orderBy, limit, increment,
 } from 'firebase/firestore';
 import { auth, db } from '../../services/firebase';
+import { chamarFuncaoAutenticada } from '../../services/api';
+import { LIMITES, limparTexto, urlExternaSegura } from '../../services/validacao';
 import { useTheme } from '../contexts/ThemeContext';
 import clsx from 'clsx';
 
@@ -126,38 +128,11 @@ const NOTICIAS_CATEGORIAS = [
   },
 ];
 
-const CACHE_TTL_MS = 60 * 60 * 1000;
-
-async function buscarNoticiaCache(categoriaId: string): Promise<Noticia[] | null> {
-  try {
-    const snap = await getDoc(doc(db, 'noticias_cache', categoriaId));
-
-    if (!snap.exists()) return null;
-
-    const data = snap.data();
-
-    if (Date.now() - data.cachadoEm > CACHE_TTL_MS) return null;
-
-    return data.noticias as Noticia[];
-  } catch {
-    return null;
-  }
-}
-
-async function salvarNoticiaCache(categoriaId: string, noticias: Noticia[]) {
-  try {
-    await setDoc(doc(db, 'noticias_cache', categoriaId), {
-      noticias,
-      cachadoEm: Date.now(),
-    });
-  } catch {}
-}
+// O cache das notícias fica na CDN (a função /news responde com
+// Cache-Control). Clientes não escrevem mais em um cache global no Firestore,
+// o que permitiria a qualquer usuário "envenenar" as notícias de todos.
 
 async function buscarNoticias(categoria: typeof NOTICIAS_CATEGORIAS[0]): Promise<Noticia[]> {
-  const cached = await buscarNoticiaCache(categoria.id);
-
-  if (cached) return cached;
-
   const url = new URL('/.netlify/functions/news', window.location.origin);
 
   url.searchParams.set('categoria', categoria.id);
@@ -186,14 +161,13 @@ async function buscarNoticias(categoria: typeof NOTICIAS_CATEGORIAS[0]): Promise
       descricao: a.description ?? '',
       fonte: a.source?.name ?? 'Desconhecido',
       autor: a.author ?? null,
-      urlOriginal: a.url,
-      urlImagem: a.urlToImage ?? null,
+      urlOriginal: urlExternaSegura(a.url) ?? '',
+      urlImagem: urlExternaSegura(a.urlToImage) ?? null,
       publicadoEm: a.publishedAt,
       categoria: categoria.label,
       cachadoEm: Date.now(),
-    }));
-
-  await salvarNoticiaCache(categoria.id, noticias);
+    }))
+    .filter((n: Noticia) => n.urlOriginal);
 
   return noticias;
 }
@@ -312,26 +286,16 @@ function calcularCarbono(registros: Registro[]) {
 }
 
 async function gerarDicaIA(e: number, a: number, o: number, kg: number): Promise<string> {
-  const maior = e >= a && e >= o ? 'energia eletrica' : a >= o ? 'agua' : 'outros gastos';
-
-  const res = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      model: 'claude-sonnet-4-20250514',
-      max_tokens: 1000,
-      messages: [
-        {
-          role: 'user',
-          content: `Consultor de sustentabilidade brasileiro. Dados mensais: Energia R$${e.toFixed(2)}, Agua R$${a.toFixed(2)}, Outros R$${o.toFixed(2)}, CO2 total ${kg.toFixed(1)}kg, maior gasto: ${maior}. Escreva analise personalizada de 3-4 frases em portugues brasileiro com: avaliacao do nivel atual, acao concreta para a categoria principal e impacto estimado com numeros.`,
-        },
-      ],
-    }),
+  // A chave da IA fica só no servidor (função dica-ia). O navegador envia
+  // apenas os números, junto com o token de login do Firebase.
+  const data = await chamarFuncaoAutenticada<{ dica?: string }>('dica-ia', {
+    energia: e,
+    agua: a,
+    outros: o,
+    co2Kg: kg,
   });
 
-  const data = await res.json();
-
-  return data.content?.[0]?.text ?? 'Continue reduzindo seu consumo!';
+  return data.dica || 'Continue reduzindo seu consumo!';
 }
 
 async function carregarProgresso(uid: string): Promise<UserProgress> {
@@ -356,13 +320,23 @@ async function carregarProgresso(uid: string): Promise<UserProgress> {
 }
 
 async function salvarArtigoLido(uid: string, artigoId: string) {
-  const snap = await getDoc(doc(db, 'usuarios', uid));
-  const atual = snap.data()?.educacao?.xpEducacao ?? 0;
-
   await updateDoc(doc(db, 'usuarios', uid), {
     'educacao.artigosLidos': arrayUnion(artigoId),
-    'educacao.xpEducacao': atual + 50,
+    'educacao.xpEducacao': increment(50),
   });
+}
+
+async function somarXpRanking(uid: string, nomeUsuario: string, xp: number) {
+  await setDoc(
+    doc(db, 'ranking_educacao', uid),
+    {
+      uid,
+      nome: limparTexto(nomeUsuario, LIMITES.nome) || 'Usuário',
+      xp: increment(xp),
+      updatedAt: serverTimestamp(),
+    },
+    { merge: true }
+  );
 }
 
 async function salvarQuizCompleto(
@@ -373,54 +347,23 @@ async function salvarQuizCompleto(
   xpGanho: number,
   nomeUsuario: string
 ) {
-  const entry = { catId, acertos, total, data: serverTimestamp() };
-  const userSnap = await getDoc(doc(db, 'usuarios', uid));
-  const xpEducacaoAtual = userSnap.data()?.educacao?.xpEducacao ?? 0;
+  const entry = { catId, acertos, total, data: new Date().toISOString() };
 
   await updateDoc(doc(db, 'usuarios', uid), {
     'educacao.quizzesCompletos': arrayUnion(entry),
-    'educacao.xpEducacao': xpEducacaoAtual + xpGanho,
+    'educacao.xpEducacao': increment(xpGanho),
   });
 
-  const rankRef = doc(db, 'ranking_educacao', uid);
-  const rankSnap = await getDoc(rankRef);
-  const xpAtual = rankSnap.exists() ? (rankSnap.data().xp ?? 0) : 0;
-
-  await setDoc(
-    rankRef,
-    {
-      uid,
-      nome: nomeUsuario,
-      xp: xpAtual + xpGanho,
-      updatedAt: serverTimestamp(),
-    },
-    { merge: true }
-  );
+  await somarXpRanking(uid, nomeUsuario, xpGanho);
 }
 
 async function salvarDesafioAceito(uid: string, desafioId: string, xp: number, nomeUsuario: string) {
-  const userSnap = await getDoc(doc(db, 'usuarios', uid));
-  const xpEducacaoAtual = userSnap.data()?.educacao?.xpEducacao ?? 0;
-
   await updateDoc(doc(db, 'usuarios', uid), {
     'educacao.desafiosAceitos': arrayUnion(desafioId),
-    'educacao.xpEducacao': xpEducacaoAtual + xp,
+    'educacao.xpEducacao': increment(xp),
   });
 
-  const rankRef = doc(db, 'ranking_educacao', uid);
-  const rankSnap = await getDoc(rankRef);
-  const xpAtual = rankSnap.exists() ? (rankSnap.data().xp ?? 0) : 0;
-
-  await setDoc(
-    rankRef,
-    {
-      uid,
-      nome: nomeUsuario,
-      xp: xpAtual + xp,
-      updatedAt: serverTimestamp(),
-    },
-    { merge: true }
-  );
+  await somarXpRanking(uid, nomeUsuario, xp);
 }
 
 async function carregarRanking(): Promise<RankingEntry[]> {
@@ -746,15 +689,7 @@ function ArtigosTab({
     setNoticias([]);
 
     try {
-      if (forceRefresh) {
-        try {
-          await setDoc(doc(db, 'noticias_cache', cat.id), {
-            noticias: [],
-            cachadoEm: 0,
-          });
-        } catch {}
-      }
-
+      void forceRefresh;
       const resultado = await buscarNoticias(cat);
 
       setNoticias(resultado);

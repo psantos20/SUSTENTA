@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { auth, db } from '../../services/firebase';
+import { LIMITES, limitarPontosHabito, limparTexto } from '../../services/validacao';
 import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
 import { useNotificacoes } from '../contexts/NotificacoesPage';
 
@@ -521,9 +522,10 @@ export const HabitsPage: React.FC = () => {
     try {
       const novoHabito: Habito = {
         id: `custom_${Date.now()}`,
-        titulo: novoTitulo.trim(),
+        titulo: limparTexto(novoTitulo, LIMITES.tituloHabito),
         categoria: novaCategoria,
-        pontos: parseInt(novoPontos) || 20,
+        // Limita os pontos de hábitos criados pelo usuário (evita XP infinito).
+        pontos: limitarPontosHabito(parseInt(novoPontos)),
         personalizado: true,
       };
 
@@ -1282,6 +1284,7 @@ export const HabitsPage: React.FC = () => {
 
                     <input
                       type="text"
+                      maxLength={LIMITES.tituloHabito}
                       value={novoTitulo}
                       onChange={(e) => setNovoTitulo(e.target.value)}
                       placeholder="Ex: Reduzir uso do ar-condicionado"

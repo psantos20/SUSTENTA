@@ -2,7 +2,8 @@ import React from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Leaf, Mail, Lock, ArrowRight, User, Phone } from 'lucide-react';
 import { auth, googleProvider, db } from '../../services/firebase';
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signInWithPopup } from 'firebase/auth';
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signInWithPopup, sendEmailVerification } from 'firebase/auth';
+import { LIMITES, limparTexto, validarSenha } from '../../services/validacao';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 import MapaBrasil from '../components/MapaBrasil';
 
@@ -34,7 +35,7 @@ const getFirebaseErrorMessage = (code: string): string => {
     case 'auth/email-already-in-use':
       return 'Este e-mail ja esta cadastrado.';
     case 'auth/weak-password':
-      return 'A senha precisa ter ao menos 6 caracteres.';
+      return `A senha precisa ter ao menos ${LIMITES.senhaMin} caracteres, com letras e números.`;
     case 'auth/too-many-requests':
       return 'Muitas tentativas. Aguarde alguns minutos e tente novamente.';
     default:
@@ -67,7 +68,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, onNavigate }) => 
       await signInWithEmailAndPassword(auth, email, password);
       onLogin();
     } catch (error: any) {
-      console.error('Login error:', error.code, error.message);
+      console.error('Login error:', error.code);
       setErro(getFirebaseErrorMessage(error.code));
     }
     setCarregando(false);
@@ -78,7 +79,8 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, onNavigate }) => 
     e.preventDefault();
     if (!nome.trim())        { setErro('Informe seu nome.');                           return; }
     if (!email.trim())       { setErro('Informe seu e-mail.');                         return; }
-    if (password.length < 6) { setErro('A senha precisa ter ao menos 6 caracteres.'); return; }
+    const erroSenha = validarSenha(password);
+    if (erroSenha)           { setErro(erroSenha);                                  return; }
     setErro('');
     setStep(2);
   };
@@ -93,16 +95,18 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, onNavigate }) => 
     try {
       const cred = await createUserWithEmailAndPassword(auth, email, password);
       await setDoc(doc(db, 'usuarios', cred.user.uid), {
-        nome,
-        telefone,
+        nome: limparTexto(nome, LIMITES.nome),
+        telefone: limparTexto(telefone, LIMITES.telefone),
         estado,
         cidade,
         email: cred.user.email,
         criadoEm: new Date().toISOString(),
       });
+      // Confirmação de e-mail logo no cadastro.
+      sendEmailVerification(cred.user).catch(() => {});
       onLogin();
     } catch (error: any) {
-      console.error('Register error:', error.code, error.message);
+      console.error('Register error:', error.code);
       setErro(getFirebaseErrorMessage(error.code));
     }
     setCarregando(false);
@@ -117,7 +121,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, onNavigate }) => 
       const userDoc = await getDoc(doc(db, 'usuarios', cred.user.uid));
       if (!userDoc.exists()) {
         await setDoc(doc(db, 'usuarios', cred.user.uid), {
-          nome: cred.user.displayName || '',
+          nome: limparTexto(cred.user.displayName, LIMITES.nome),
           email: cred.user.email,
           telefone: '',
           estado: '',
@@ -127,7 +131,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, onNavigate }) => 
       }
       onLogin();
     } catch (error: any) {
-      console.error('Google login error:', error.code, error.message);
+      console.error('Google login error:', error.code);
       setErro(getFirebaseErrorMessage(error.code));
     }
     setCarregando(false);
@@ -317,7 +321,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, onNavigate }) => 
                     <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
                     <input
                       type="text" required value={nome}
-                      onChange={e => setNome(e.target.value)}
+                      maxLength={LIMITES.nome} onChange={e => setNome(e.target.value)}
                       className="w-full pl-10 pr-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 text-slate-900 bg-white"
                       placeholder="Seu nome completo"
                     />
@@ -332,7 +336,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, onNavigate }) => 
                     <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
                     <input
                       type="tel" value={telefone}
-                      onChange={e => setTelefone(e.target.value)}
+                      maxLength={LIMITES.telefone} onChange={e => setTelefone(e.target.value)}
                       className="w-full pl-10 pr-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 text-slate-900 bg-white"
                       placeholder="(11) 99999-9999"
                     />

@@ -1,0 +1,284 @@
+rules_version = '2';
+
+// ============================================================================
+//  SUSTENTA — Regras de segurança do Firestore
+// ----------------------------------------------------------------------------
+//  Princípios (padrão para TODA funcionalidade nova):
+//   1. Negar por padrão: nada é acessível sem uma regra explícita abaixo.
+//   2. Cada usuário só lê/escreve os próprios dados (dono = request.auth.uid).
+//   3. Compartilhamento (família) só com membros reais do grupo e, no caso de
+//      gastos, só se o dono do dado autorizou (dadosCompartilhados.gastos).
+//   4. Toda escrita valida formato, tipos, tamanhos e campos permitidos.
+//   5. Dados globais (cache, ranking) nunca podem ser escritos por um usuário
+//      em nome de outro.
+//  Testes: npm run test:rules (emulador do Firestore).
+// ============================================================================
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ---------- Funções auxiliares ----------
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isSelf(uid) {
+      return signedIn() && request.auth.uid == uid;
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function changedKeys() {
+      return incoming().diff(existing()).affectedKeys();
+    }
+
+    function shortString(v, max) {
+      return v is string && v.size() <= max;
+    }
+
+    function optionalShortString(data, field, max) {
+      return !(field in data) || data[field] == null || shortString(data[field], max);
+    }
+
+    function userDoc(uid) {
+      return get(/databases/$(database)/documents/usuarios/$(uid));
+    }
+
+    function groupDoc(gid) {
+      return get(/databases/$(database)/documents/grupos_familia/$(gid));
+    }
+
+    function groupMembers(gid) {
+      return groupDoc(gid).data.get('membroUids', []);
+    }
+
+    // O usuário autenticado e o dono do dado (ownerUid) estão no mesmo grupo
+    // familiar. O grupoFamiliaId é lido do documento do DONO do dado (que só
+    // ele pode alterar) e a participação é conferida no próprio grupo.
+    function sameFamily(ownerUid) {
+      let owner = userDoc(ownerUid);
+      let gid = owner.data.get('grupoFamiliaId', null);
+      return signedIn()
+        && owner != null
+        && gid is string
+        && request.auth.uid in groupMembers(gid)
+        && ownerUid in groupMembers(gid);
+    }
+
+    function sharesSpending(ownerUid) {
+      return userDoc(ownerUid).data.get('dadosCompartilhados', {}).get('gastos', false) == true;
+    }
+
+    function xpDeltaOk(field, maxDelta) {
+      let before = resource == null ? 0 : existing().get(field, 0);
+      let after = incoming().get(field, 0);
+      return after is number && after >= 0 && after - before <= maxDelta;
+    }
+
+    // ---------- usuarios/{uid} ----------
+    // Perfil do usuário. Membros da família podem ler (nome, nível, preferências
+    // de compartilhamento). Só o próprio usuário escreve.
+    match /usuarios/{uid} {
+      function profileKeys() {
+        return [
+          'nome', 'telefone', 'estado', 'cidade', 'email', 'criadoEm',
+          'darkMode', 'grupoFamiliaId', 'dadosCompartilhados',
+          'xpHabitos', 'educacao'
+        ];
+      }
+
+      function validProfile() {
+        let d = incoming();
+        return optionalShortString(d, 'nome', 80)
+          && optionalShortString(d, 'telefone', 20)
+          && optionalShortString(d, 'estado', 2)
+          && optionalShortString(d, 'cidade', 80)
+          && (!('email' in d) || d.email == null || d.email == request.auth.token.email)
+          && (!('darkMode' in d) || d.darkMode is bool)
+          && (!('dadosCompartilhados' in d) || (
+                d.dadosCompartilhados is map
+                && d.dadosCompartilhados.keys().hasOnly(['gastos', 'nivel', 'conquistas'])
+             ))
+          && (!('educacao' in d) || d.educacao is map)
+          && xpDeltaOk('xpHabitos', 1000);
+      }
+
+      // Só pode apontar para um grupo do qual realmente faz parte (ou null).
+      function validGroupLink() {
+        let d = incoming();
+        return !('grupoFamiliaId' in d)
+          || d.grupoFamiliaId == null
+          || (d.grupoFamiliaId is string && request.auth.uid in groupMembers(d.grupoFamiliaId));
+      }
+
+      function validEducacao() {
+        let before = resource == null ? {} : existing().get('educacao', {});
+        let after = incoming().get('educacao', {});
+        return after.get('xpEducacao', 0) is number
+          && after.get('xpEducacao', 0) - before.get('xpEducacao', 0) <= 1000;
+      }
+
+      allow read: if isSelf(uid) || sameFamily(uid);
+      allow create: if isSelf(uid) && incoming().keys().hasOnly(profileKeys())
+        && validProfile() && validGroupLink() && validEducacao();
+      allow update: if isSelf(uid) && changedKeys().hasOnly(profileKeys())
+        && validProfile() && validEducacao()
+        && (!('grupoFamiliaId' in changedKeys()) || validGroupLink());
+      allow delete: if isSelf(uid);
+    }
+
+    // ---------- registros/{id} ----------
+    // Gastos de consumo. Família só lê se o dono autorizou "gastos".
+    match /registros/{id} {
+      function validRegistro(d) {
+        return d.keys().hasOnly(['uid', 'categoria', 'subcategoria', 'valor', 'descricao', 'mes', 'criadoEm'])
+          && d.uid == request.auth.uid
+          && d.categoria in ['energia', 'agua', 'outro']
+          && d.valor is number && d.valor > 0 && d.valor <= 1000000
+          && d.mes is string && d.mes.matches('^[0-9]{4}-(0[1-9]|1[0-2])$')
+          && optionalShortString(d, 'descricao', 300)
+          && optionalShortString(d, 'subcategoria', 60);
+      }
+
+      allow read: if signedIn() && (
+        resource.data.uid == request.auth.uid
+        || (sameFamily(resource.data.uid) && sharesSpending(resource.data.uid))
+      );
+      allow create: if signedIn() && validRegistro(incoming())
+        && incoming().criadoEm == request.time;
+      allow update: if signedIn()
+        && existing().uid == request.auth.uid
+        && changedKeys().hasOnly(['valor', 'descricao', 'subcategoria', 'categoria', 'mes'])
+        && validRegistro(incoming());
+      allow delete: if signedIn() && existing().uid == request.auth.uid;
+    }
+
+    // ---------- habitos_usuarios/{uid} ----------
+    match /habitos_usuarios/{uid} {
+      function habitosKeys() {
+        return [
+          'uid', 'streak', 'ultimoRegistro', 'diasAtivos', 'habitosPersonalizados',
+          'progressoHabitos', 'progressoDesafios', 'xpHabitos'
+        ];
+      }
+
+      function validHabitos() {
+        let d = incoming();
+        return (!('uid' in d) || d.uid == uid)
+          && (!('habitosPersonalizados' in d) || (d.habitosPersonalizados is list && d.habitosPersonalizados.size() <= 50))
+          && (!('progressoDesafios' in d) || (d.progressoDesafios is list && d.progressoDesafios.size() <= 100))
+          && xpDeltaOk('xpHabitos', 1000);
+      }
+
+      allow read: if isSelf(uid) || sameFamily(uid);
+      allow create: if isSelf(uid) && incoming().keys().hasOnly(habitosKeys()) && validHabitos();
+      allow update: if isSelf(uid) && changedKeys().hasOnly(habitosKeys()) && validHabitos();
+      allow delete: if isSelf(uid);
+    }
+
+    // ---------- grupos_familia/{gid} ----------
+    // gid = "grupo_<uid do dono>". membroUids é a lista usada pelas regras.
+    match /grupos_familia/{gid} {
+      function isOwner() {
+        return signedIn() && existing().donoUid == request.auth.uid;
+      }
+
+      function isMember() {
+        return signedIn() && request.auth.uid in existing().get('membroUids', []);
+      }
+
+      function membersConsistent() {
+        let d = incoming();
+        return d.membroUids is list
+          && d.membros is list
+          && d.membroUids.size() <= 5
+          && d.membros.size() == d.membroUids.size()
+          && d.donoUid in d.membroUids;
+      }
+
+      allow read: if isMember() || isOwner();
+
+      allow create: if signedIn()
+        && gid == 'grupo_' + request.auth.uid
+        && incoming().donoUid == request.auth.uid
+        && incoming().membroUids == [request.auth.uid]
+        && membersConsistent()
+        && shortString(incoming().nome, 60)
+        && shortString(incoming().codigoConvite, 32);
+
+      // Dono: renomear, remover membros, trocar código, migrar grupo antigo.
+      allow update: if isOwner()
+        && incoming().donoUid == existing().donoUid
+        && changedKeys().hasOnly(['nome', 'membros', 'membroUids', 'codigoConvite'])
+        && membersConsistent()
+        && shortString(incoming().nome, 60)
+        && shortString(incoming().codigoConvite, 32);
+
+      // Membro saindo: remove apenas a si mesmo.
+      allow update: if isMember() && !isOwner()
+        && changedKeys().hasOnly(['membros', 'membroUids'])
+        && incoming().membroUids == existing().membroUids.removeAll([request.auth.uid])
+        && membersConsistent();
+
+      // Entrada com convite: precisa provar que conhece o código atual e só
+      // pode adicionar a si mesmo, sem mexer nos membros existentes.
+      allow update: if signedIn() && !isMember()
+        && changedKeys().hasOnly(['membros', 'membroUids', 'ultimoCodigoUsado'])
+        && incoming().ultimoCodigoUsado == existing().codigoConvite
+        && incoming().membroUids.hasAll(existing().membroUids)
+        && incoming().membroUids.size() == existing().membroUids.size() + 1
+        && request.auth.uid in incoming().membroUids
+        && incoming().membros.hasAll(existing().membros)
+        && membersConsistent();
+
+      allow delete: if isOwner();
+    }
+
+    // ---------- convites_familia/{codigo} ----------
+    // Índice código → grupo. Só leitura direta por código (sem listagem),
+    // então não dá para "varrer" convites.
+    match /convites_familia/{codigo} {
+      allow get: if signedIn();
+      allow list: if false;
+      allow create: if signedIn()
+        && incoming().keys().hasOnly(['grupoId', 'nomeGrupo', 'criadoEm'])
+        && groupDoc(incoming().grupoId).data.donoUid == request.auth.uid
+        && groupDoc(incoming().grupoId).data.codigoConvite == codigo
+        && shortString(incoming().nomeGrupo, 60);
+      allow update: if false;
+      allow delete: if signedIn() && groupDoc(existing().grupoId).data.donoUid == request.auth.uid;
+    }
+
+    // ---------- ranking_educacao/{uid} ----------
+    // Público para usuários logados (só nome e XP). Cada um escreve o seu.
+    match /ranking_educacao/{uid} {
+      allow read: if signedIn();
+      allow create, update: if isSelf(uid)
+        && incoming().keys().hasOnly(['uid', 'nome', 'xp', 'updatedAt'])
+        && incoming().uid == uid
+        && shortString(incoming().nome, 80)
+        && xpDeltaOk('xp', 1000);
+      allow delete: if isSelf(uid);
+    }
+
+    // ---------- noticias_cache/{categoria} ----------
+    // Escrita bloqueada para clientes (evita "envenenar" o cache de todos).
+    // O cache agora é feito na CDN pela função /news.
+    match /noticias_cache/{categoria} {
+      allow read: if signedIn();
+      allow write: if false;
+    }
+
+    // Qualquer outra coleção: negado.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

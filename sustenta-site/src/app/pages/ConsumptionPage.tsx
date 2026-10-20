@@ -2,7 +2,8 @@ import React from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Zap, Droplets, Wallet, Plus, CheckCircle2, Loader2, Trash2, Pencil, X, Check, ChevronDown } from 'lucide-react';
 import { db, auth } from '../../services/firebase';
-import { collection, addDoc, Timestamp, query, where, getDocs, deleteDoc, doc, updateDoc } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, query, where, getDocs, deleteDoc, doc, updateDoc } from 'firebase/firestore';
+import { LIMITES, limparTexto, validarMes, validarValor } from '../../services/validacao';
 
 const outrasOpcoes = [
   'Gás', 'Internet', 'Transporte', 'Alimentação', 'Saúde', 'Educação', 'Lazer', 'Vestuário', 'Moradia', 'Outro'
@@ -64,7 +65,10 @@ export const ConsumptionPage: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!valor || parseFloat(valor) <= 0)                        { setErro('Informe um valor válido.'); return; }
+    const erroValor = validarValor(parseFloat(valor));
+    if (erroValor)                                               { setErro(erroValor); return; }
+    const erroMes = validarMes(mes);
+    if (erroMes)                                                 { setErro(erroMes); return; }
     if (categoria === 'outro' && !subcategoria)                  { setErro('Selecione uma subcategoria.'); return; }
     if (categoria === 'outro' && subcategoria === 'Outro' && !subcategoriaCustom.trim()) { setErro('Digite o nome da categoria.'); return; }
     setSalvando(true); setErro('');
@@ -74,11 +78,13 @@ export const ConsumptionPage: React.FC = () => {
       await addDoc(collection(db, 'registros'), {
         uid: user.uid,
         categoria,
-        subcategoria: categoria === 'outro' ? (subcategoria === 'Outro' ? subcategoriaCustom : subcategoria) : null,
+        subcategoria: categoria === 'outro'
+          ? limparTexto(subcategoria === 'Outro' ? subcategoriaCustom : subcategoria, LIMITES.subcategoria)
+          : null,
         valor: parseFloat(valor),
-        descricao,
+        descricao: limparTexto(descricao, LIMITES.descricao),
         mes,
-        criadoEm: Timestamp.now(),
+        criadoEm: serverTimestamp(),
       });
       setSucesso(true);
       setValor(''); setDescricao(''); setSubcategoria(''); setSubcategoriaCustom('');
@@ -101,7 +107,13 @@ export const ConsumptionPage: React.FC = () => {
   };
 
   const handleSaveEdit = async (id: string) => {
-    await updateDoc(doc(db, 'registros', id), { valor: parseFloat(editValor), descricao: editDescricao });
+    const novoValor = parseFloat(editValor);
+    const erroValor = validarValor(novoValor);
+    if (erroValor) { setErro(erroValor); return; }
+    await updateDoc(doc(db, 'registros', id), {
+      valor: novoValor,
+      descricao: limparTexto(editDescricao, LIMITES.descricao),
+    });
     setEditandoId(null);
     carregarRegistros();
   };
@@ -169,7 +181,7 @@ export const ConsumptionPage: React.FC = () => {
               <AnimatePresence>
                 {subcategoria === 'Outro' && (
                   <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="mt-3 overflow-hidden">
-                    <input type="text" value={subcategoriaCustom} onChange={e => setSubcategoriaCustom(e.target.value)}
+                    <input type="text" maxLength={LIMITES.subcategoria} value={subcategoriaCustom} onChange={e => setSubcategoriaCustom(e.target.value)}
                       className="w-full px-4 py-3 border border-slate-200 dark:border-slate-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 text-slate-900 dark:text-slate-100 bg-white dark:bg-slate-700"
                       placeholder="Digite o nome da categoria..." />
                   </motion.div>
@@ -185,7 +197,7 @@ export const ConsumptionPage: React.FC = () => {
             <label className="text-sm font-medium text-slate-700 dark:text-slate-300 block mb-2">Valor (R$)</label>
             <div className="relative">
               <span className="absolute inset-y-0 left-4 flex items-center text-slate-400 font-bold">R$</span>
-              <input type="number" min="0" step="0.01" required value={valor} onChange={e => setValor(e.target.value)}
+              <input type="number" min="0" max={LIMITES.valorMax} step="0.01" required value={valor} onChange={e => setValor(e.target.value)}
                 className="w-full pl-12 pr-4 py-3 border border-slate-200 dark:border-slate-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 text-slate-900 dark:text-slate-100 text-lg font-bold bg-white dark:bg-slate-700"
                 placeholder="0,00" />
             </div>
@@ -206,7 +218,7 @@ export const ConsumptionPage: React.FC = () => {
           {/* Descrição */}
           <div>
             <label className="text-sm font-medium text-slate-700 dark:text-slate-300 block mb-2">Descrição (opcional)</label>
-            <input type="text" value={descricao} onChange={e => setDescricao(e.target.value)}
+            <input type="text" maxLength={LIMITES.descricao} value={descricao} onChange={e => setDescricao(e.target.value)}
               className="w-full px-4 py-3 border border-slate-200 dark:border-slate-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 text-slate-900 dark:text-slate-100 bg-white dark:bg-slate-700"
               placeholder={`Ex: Conta de ${categoriaLabel()} de ${mesLabel(mes)}`} />
           </div>
@@ -264,7 +276,7 @@ export const ConsumptionPage: React.FC = () => {
                       <div className="flex gap-2 flex-wrap">
                         <input type="number" value={editValor} onChange={e => setEditValor(e.target.value)}
                           className="border border-slate-200 dark:border-slate-600 rounded-lg px-2 py-1 text-sm w-24 focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100" />
-                        <input type="text" value={editDescricao} onChange={e => setEditDescricao(e.target.value)}
+                        <input type="text" maxLength={LIMITES.descricao} value={editDescricao} onChange={e => setEditDescricao(e.target.value)}
                           className="border border-slate-200 dark:border-slate-600 rounded-lg px-2 py-1 text-sm flex-1 focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100" placeholder="Descrição" />
                       </div>
                     ) : (
