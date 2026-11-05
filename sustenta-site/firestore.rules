@@ -90,8 +90,21 @@ service cloud.firestore {
         return [
           'nome', 'telefone', 'estado', 'cidade', 'email', 'criadoEm',
           'darkMode', 'grupoFamiliaId', 'dadosCompartilhados',
-          'xpHabitos', 'educacao'
+          'xpHabitos', 'educacao', 'metas'
         ];
+      }
+
+      // Metas mensais de gasto por categoria (R$). Mesmo teto dos registros.
+      function validMetaValor(m, campo) {
+        return !(campo in m) || (m[campo] is number && m[campo] > 0 && m[campo] <= 1000000);
+      }
+
+      function validMetas(m) {
+        return m is map
+          && m.keys().hasOnly(['energia', 'agua', 'outro'])
+          && validMetaValor(m, 'energia')
+          && validMetaValor(m, 'agua')
+          && validMetaValor(m, 'outro');
       }
 
       function validProfile() {
@@ -107,6 +120,7 @@ service cloud.firestore {
                 && d.dadosCompartilhados.keys().hasOnly(['gastos', 'nivel', 'conquistas'])
              ))
           && (!('educacao' in d) || d.educacao is map)
+          && (!('metas' in d) || validMetas(d.metas))
           && xpDeltaOk('xpHabitos', 1000);
       }
 

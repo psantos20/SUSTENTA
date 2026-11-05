@@ -18,17 +18,16 @@ import { PrivacidadePage } from './app/pages/PrivacidadePage';
 import EducationPage from './app/pages/EducationPage';
 import { TermosUsoPage } from './app/pages/TermosUsoPage';
 import { buscarConvite, entrarNoGrupo, normalizarCodigo } from './services/familia';
+import { useFeedback } from './app/contexts/FeedbackContext';
 
 // 🔥 Firebase
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { auth } from "./services/firebase";
 
-type Page =
-  | 'dashboard' | 'consumption' | 'analysis' | 'habits'
-  | 'history' | 'map' | 'reports' | 'profile'
-  | 'education';
-
-type PagePublica = 'login' | 'sobre' | 'privacidade' | 'termos';
+import {
+  type Page, type PagePublica, TITULOS_APP,
+  caminhoDaPagina, caminhoPublico, paginaDoCaminho, publicaDoCaminho,
+} from './services/rotas';
 
 function PageContent({ page, onNavigate }: { page: Page; onNavigate: (p: string) => void }) {
   if (page === 'dashboard')   return <DashboardPage onNavigate={onNavigate} />;
@@ -55,11 +54,50 @@ function PageContent({ page, onNavigate }: { page: Page; onNavigate: (p: string)
 }
 
 export default function App() {
+  const { avisar, confirmar } = useFeedback();
   const [isAuthenticated, setIsAuthenticated] = React.useState(false);
   const [loading, setLoading] = React.useState(true);
 
-  const [currentPage, setCurrentPage] = React.useState<Page>('dashboard');
-  const [publicPage, setPublicPage] = React.useState<PagePublica>('login');
+  // A tela atual vem do endereço (URL): F5, botão "voltar" e links diretos funcionam.
+  const [currentPage, setCurrentPageState] = React.useState<Page>(
+    () => paginaDoCaminho(window.location.pathname) ?? 'dashboard'
+  );
+  const [publicPage, setPublicPageState] = React.useState<PagePublica>(
+    () => publicaDoCaminho(window.location.pathname)
+  );
+
+  const setCurrentPage = React.useCallback((page: Page) => {
+    setCurrentPageState(page);
+    const caminho = caminhoDaPagina(page);
+    if (window.location.pathname !== caminho) window.history.pushState({}, '', caminho);
+  }, []);
+
+  const setPublicPage = React.useCallback((page: PagePublica) => {
+    setPublicPageState(page);
+    const caminho = caminhoPublico(page);
+    if (window.location.pathname !== caminho) window.history.pushState({}, '', caminho);
+  }, []);
+
+  // Botão "voltar"/"avançar" do navegador.
+  React.useEffect(() => {
+    const aoNavegar = () => {
+      setCurrentPageState(paginaDoCaminho(window.location.pathname) ?? 'dashboard');
+      setPublicPageState(publicaDoCaminho(window.location.pathname));
+    };
+    window.addEventListener('popstate', aoNavegar);
+    return () => window.removeEventListener('popstate', aoNavegar);
+  }, []);
+
+  // Mantém o endereço e o título da aba coerentes com a tela atual.
+  React.useEffect(() => {
+    if (isAuthenticated) {
+      const caminho = caminhoDaPagina(currentPage);
+      if (window.location.pathname !== caminho) window.history.replaceState({}, '', caminho);
+      document.title = `${TITULOS_APP[currentPage]} | SUSTENTA`;
+    } else {
+      document.title = 'SUSTENTA';
+    }
+  }, [isAuthenticated, currentPage]);
 
   const [nivelInfo, setNivelInfo] = React.useState({
     nivel: 1, xpAtual: 0, xpTotal: 1000, nome: 'Iniciante'
@@ -93,20 +131,25 @@ export default function App() {
     const codigo = convitePendente;
 
     buscarConvite(codigo)
-      .then((convite) => {
+      .then(async (convite) => {
         if (!convite) {
-          window.alert('Este convite é inválido ou expirou.');
+          avisar('Este convite é inválido ou expirou.', 'erro');
           return;
         }
-        const aceitar = window.confirm(
-          `Você foi convidado para o grupo familiar "${convite.nomeGrupo}".\n\n` +
-          'Membros do grupo poderão ver seu nome, nível e os dados que você escolher compartilhar. Deseja entrar?'
-        );
+        const aceitar = await confirmar({
+          titulo: 'Convite para grupo familiar',
+          mensagem:
+            `Você foi convidado para o grupo familiar "${convite.nomeGrupo}".\n\n` +
+            'Membros do grupo poderão ver seu nome, nível e os dados que você escolher compartilhar. Deseja entrar?',
+          textoConfirmar: 'Entrar no grupo',
+          textoCancelar: 'Agora não',
+        });
         if (!aceitar) return;
-        return entrarNoGrupo(codigo).then(() => setCurrentPage('profile'));
+        await entrarNoGrupo(codigo);
+        setCurrentPage('profile');
       })
-      .catch((e) => window.alert(e?.message || 'Não foi possível entrar no grupo.'));
-  }, [isAuthenticated, convitePendente]);
+      .catch((e) => avisar(e?.message || 'Não foi possível entrar no grupo.', 'erro'));
+  }, [isAuthenticated, convitePendente, avisar, confirmar]);
 
   React.useEffect(() => {
     if (!isAuthenticated) return;
@@ -164,7 +207,7 @@ export default function App() {
             onNavigate={(page) => setCurrentPage(page as Page)}
             onLogout={async () => {
               await signOut(auth);
-              setCurrentPage('dashboard');
+              setCurrentPageState('dashboard');
               setPublicPage('login');
             }}
             nivel={nivelInfo.nivel}

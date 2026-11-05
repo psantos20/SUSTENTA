@@ -1499,8 +1499,11 @@ function CarbonTab() {
       try {
         const dica = await gerarDicaIA(e, a, o, res.totalKg);
         setDicaIA(dica);
-      } catch {
-        setDicaIA('Continue reduzindo seu consumo e acompanhe sua evolucao mensal.');
+      } catch (erro) {
+        // Sem ANTHROPIC_API_KEY, sem login ou com limite de uso: a análise por IA
+        // não roda. Avisa o usuário em vez de fingir que a dica é personalizada.
+        console.warn('[dica-ia] indisponível:', erro instanceof Error ? erro.message : erro);
+        setDicaIA('A análise personalizada por IA está indisponível no momento. Enquanto isso: continue reduzindo seu consumo e acompanhe sua evolução mensal.');
       }
     } finally {
       setLoading(false);

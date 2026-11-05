@@ -2,6 +2,7 @@ import React from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Zap, Droplets, Wallet, Plus, CheckCircle2, Loader2, Trash2, Pencil, X, Check, ChevronDown } from 'lucide-react';
 import { db, auth } from '../../services/firebase';
+import { useFeedback } from '../contexts/FeedbackContext';
 import { collection, addDoc, serverTimestamp, query, where, getDocs, deleteDoc, doc, updateDoc } from 'firebase/firestore';
 import { LIMITES, limparTexto, validarMes, validarValor } from '../../services/validacao';
 
@@ -24,6 +25,7 @@ function mesLabel(mes: string) {
 }
 
 export const ConsumptionPage: React.FC = () => {
+  const { confirmar } = useFeedback();
   const hoje = new Date();
   const mesAtual = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}`;
 
@@ -96,7 +98,7 @@ export const ConsumptionPage: React.FC = () => {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Deletar este registro?')) return;
+    if (!(await confirmar({ titulo: 'Deletar registro', mensagem: 'Deletar este registro?', textoConfirmar: 'Deletar', perigo: true }))) return;
     await deleteDoc(doc(db, 'registros', id));
     carregarRegistros();
   };

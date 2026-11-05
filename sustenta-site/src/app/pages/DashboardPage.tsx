@@ -2,6 +2,7 @@ import React from 'react';
 import { Zap, Droplets, Wallet, CheckCircle2, Calendar, AlertCircle, ArrowUpRight, Leaf, Loader2, TrendingUp, PieChart, Lightbulb } from 'lucide-react';
 import { StatCard } from '../components/dashboard/StatCard';
 import { CategoryChart } from '../components/dashboard/SustainabilityChart';
+import { MetasCard } from '../components/dashboard/MetasCard';
 import { motion } from 'motion/react';
 import { buscarRegistrosMes, buscarTodosRegistros, calcularNivel } from '../../services/consumo';
 
@@ -311,6 +312,9 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
               </div>
             </div>
           </div>
+
+          {/* Metas mensais por categoria */}
+          <MetasCard gastos={{ energia, agua, outro }} mesLabel={mesLabel} />
 
           {/* Alertas inteligentes */}
           <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm">

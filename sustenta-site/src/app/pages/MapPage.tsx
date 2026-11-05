@@ -10,6 +10,7 @@ import {
   ExternalLink, ChevronDown, ChevronUp, Clock
 } from 'lucide-react';
 import { auth, db } from '../../services/firebase';
+import { useFeedback } from '../contexts/FeedbackContext';
 import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firestore';
 
 declare global {
@@ -182,6 +183,7 @@ function useDarkMode() {
 }
 
 export const MapPage: React.FC = () => {
+  const { avisar } = useFeedback();
   const dark = useDarkMode();
 
   const mapDivRef       = React.useRef<HTMLDivElement>(null);
@@ -364,7 +366,7 @@ export const MapPage: React.FC = () => {
           });
         }
       },
-      () => { setLoadingPos(false); alert('Nao foi possivel obter sua localizacao.'); },
+      () => { setLoadingPos(false); avisar('Não foi possível obter sua localização. Verifique se o navegador permitiu o acesso.', 'erro'); },
       { timeout: 10000 }
     );
   };

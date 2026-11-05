@@ -4,6 +4,13 @@
 [functions]
   node_bundler = "esbuild"
 
+# O app troca de tela pelo endereço (/painel, /mapa...): qualquer caminho que não
+# seja um arquivo ou função deve devolver o index.html (SPA).
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
 [[headers]]
   for = "/*"
   [headers.values]

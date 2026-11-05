@@ -12,6 +12,7 @@ import {
 } from 'recharts';
 import { motion, AnimatePresence } from 'motion/react';
 import { auth, db } from '../../services/firebase';
+import { useFeedback } from '../contexts/FeedbackContext';
 import {
   collection, query, where, getDocs, deleteDoc, doc
 } from 'firebase/firestore';
@@ -153,6 +154,7 @@ const InsightCard: React.FC<InsightCardProps> = ({ icon: Icon, titulo, descricao
 // ─── Componente principal ─────────────────────────────────────────────────────
 
 export const HistoryPage: React.FC = () => {
+  const { confirmar } = useFeedback();
   const dark = useDarkMode();
 
   const [registros,      setRegistros]      = React.useState<Registro[]>([]);
@@ -274,7 +276,7 @@ export const HistoryPage: React.FC = () => {
 
   // ─── Deletar ──────────────────────────────────────────────────────────────
   const deletar = async (id: string) => {
-    if (!confirm('Deletar este registro?')) return;
+    if (!(await confirmar({ titulo: 'Deletar registro', mensagem: 'Deletar este registro?', textoConfirmar: 'Deletar', perigo: true }))) return;
     await deleteDoc(doc(db, 'registros', id));
     setRegistros(prev => prev.filter(r => r.id !== id));
   };

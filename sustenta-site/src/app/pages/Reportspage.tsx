@@ -13,6 +13,7 @@ import {
 import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firestore';
 import { auth, db } from '../../services/firebase';
 import { useTheme } from '../contexts/ThemeContext';
+import { useFeedback } from '../contexts/FeedbackContext';
 import clsx from 'clsx';
 
 interface Registro {
@@ -784,6 +785,7 @@ function CustomTooltip({ active, payload, label }: any) {
 }
 
 export default function ReportsPage() {
+  const { avisar } = useFeedback();
   const { darkMode } = useTheme();
   const mesesDisponiveis = gerarMesesDisponiveis();
 
@@ -994,7 +996,7 @@ export default function ReportsPage() {
           ? error.message
           : 'Erro desconhecido ao gerar PDF.';
 
-      alert(`Não foi possível gerar o PDF.\n\nDetalhes: ${mensagem}`);
+      avisar(`Não foi possível gerar o PDF.\n\nDetalhes: ${mensagem}`, 'erro');
     } finally {
       setGenerating(false);
     }

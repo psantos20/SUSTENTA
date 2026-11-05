@@ -104,6 +104,24 @@ describe('usuarios', () => {
     await assertFails(updateDoc(doc(db(ALICE), 'usuarios', ALICE), { xpHabitos: 999999 }));
   });
 
+  it('metas: aceita valores válidos e rejeita inválidos', async () => {
+    await seed(async (d) => { await setDoc(doc(d, 'usuarios', ALICE), { nome: 'A' }); });
+    const ref = doc(db(ALICE), 'usuarios', ALICE);
+    await assertSucceeds(updateDoc(ref, { metas: { energia: 200, agua: 80.5 } }));
+    await assertSucceeds(updateDoc(ref, { metas: {} }));
+    await assertFails(updateDoc(ref, { metas: { energia: 0 } }));
+    await assertFails(updateDoc(ref, { metas: { energia: -5 } }));
+    await assertFails(updateDoc(ref, { metas: { energia: 1000001 } }));
+    await assertFails(updateDoc(ref, { metas: { energia: '200' } }));
+    await assertFails(updateDoc(ref, { metas: { transporte: 100 } }));
+    await assertFails(updateDoc(ref, { metas: 'x' }));
+  });
+
+  it('metas: ninguém altera as metas de outra pessoa', async () => {
+    await seed(async (d) => { await setDoc(doc(d, 'usuarios', ALICE), { nome: 'A' }); });
+    await assertFails(updateDoc(doc(db(EVE), 'usuarios', ALICE), { metas: { energia: 1 } }));
+  });
+
   it('não permite apontar para um grupo do qual não faz parte', async () => {
     await seed(async (d) => {
       await setDoc(doc(d, 'usuarios', EVE), { nome: 'Eve' });
