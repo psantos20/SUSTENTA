@@ -1,24 +1,35 @@
 import React from 'react';
 import { LoginPage } from './app/pages/LoginPage';
 import { AppLayout } from './app/components/layout/AppLayout';
-import { DashboardPage } from './app/pages/DashboardPage';
-import { ConsumptionPage } from './app/pages/ConsumptionPage';
-import { ProfilePage } from './app/pages/ProfilePage';
 import { NotificacoesProvider } from './app/contexts/NotificacoesPage';
 import { ThemeProvider } from './app/contexts/ThemeContext';
 import { motion, AnimatePresence } from 'motion/react';
 import { buscarTodosRegistros, calcularNivel } from './services/consumo';
-import { AnalysisPage } from './app/pages/AnalysisPage';
-import { HabitsPage } from './app/pages/Habitspage';
-import { HistoryPage } from './app/pages/HistoryPage';
-import { MapPage } from './app/pages/MapPage';
-import ReportsPage from './app/pages/Reportspage';
-import { SobreNosPage } from './app/pages/SobreNosPage';
-import { PrivacidadePage } from './app/pages/PrivacidadePage';
-import EducationPage from './app/pages/EducationPage';
-import { TermosUsoPage } from './app/pages/TermosUsoPage';
 import { buscarConvite, entrarNoGrupo, normalizarCodigo } from './services/familia';
 import { useFeedback } from './app/contexts/FeedbackContext';
+
+// Telas carregadas sob demanda: cada uma vira um arquivo separado, baixado só
+// quando a pessoa abre a tela (o primeiro carregamento fica bem menor).
+const DashboardPage = React.lazy(() => import('./app/pages/DashboardPage').then((m) => ({ default: m.DashboardPage })));
+const ConsumptionPage = React.lazy(() => import('./app/pages/ConsumptionPage').then((m) => ({ default: m.ConsumptionPage })));
+const ProfilePage = React.lazy(() => import('./app/pages/ProfilePage').then((m) => ({ default: m.ProfilePage })));
+const AnalysisPage = React.lazy(() => import('./app/pages/AnalysisPage').then((m) => ({ default: m.AnalysisPage })));
+const HabitsPage = React.lazy(() => import('./app/pages/Habitspage').then((m) => ({ default: m.HabitsPage })));
+const HistoryPage = React.lazy(() => import('./app/pages/HistoryPage').then((m) => ({ default: m.HistoryPage })));
+const MapPage = React.lazy(() => import('./app/pages/MapPage').then((m) => ({ default: m.MapPage })));
+const ReportsPage = React.lazy(() => import('./app/pages/Reportspage'));
+const EducationPage = React.lazy(() => import('./app/pages/EducationPage'));
+const SobreNosPage = React.lazy(() => import('./app/pages/SobreNosPage').then((m) => ({ default: m.SobreNosPage })));
+const PrivacidadePage = React.lazy(() => import('./app/pages/PrivacidadePage').then((m) => ({ default: m.PrivacidadePage })));
+const TermosUsoPage = React.lazy(() => import('./app/pages/TermosUsoPage').then((m) => ({ default: m.TermosUsoPage })));
+
+function Carregando() {
+  return (
+    <div className="flex items-center justify-center h-64" role="status" aria-live="polite">
+      <p className="text-slate-500 dark:text-slate-300">Carregando...</p>
+    </div>
+  );
+}
 
 // 🔥 Firebase
 import { onAuthStateChanged, signOut } from "firebase/auth";
@@ -179,13 +190,13 @@ export default function App() {
     const voltarLogin = () => setPublicPage('login');
 
     if (publicPage === 'sobre')
-      return <ThemeProvider><SobreNosPage onVoltar={voltarLogin} /></ThemeProvider>;
+      return <ThemeProvider><React.Suspense fallback={<Carregando />}><SobreNosPage onVoltar={voltarLogin} /></React.Suspense></ThemeProvider>;
 
     if (publicPage === 'privacidade')
-      return <ThemeProvider><PrivacidadePage onVoltar={voltarLogin} /></ThemeProvider>;
+      return <ThemeProvider><React.Suspense fallback={<Carregando />}><PrivacidadePage onVoltar={voltarLogin} /></React.Suspense></ThemeProvider>;
 
     if (publicPage === 'termos')
-      return <ThemeProvider><TermosUsoPage onVoltar={voltarLogin} /></ThemeProvider>;
+      return <ThemeProvider><React.Suspense fallback={<Carregando />}><TermosUsoPage onVoltar={voltarLogin} /></React.Suspense></ThemeProvider>;
 
     return (
       <ThemeProvider>
@@ -223,10 +234,12 @@ export default function App() {
                 exit={{ opacity: 0, y: -10 }}
                 transition={{ duration: 0.2 }}
               >
-                <PageContent
-                  page={currentPage}
-                  onNavigate={(p) => setCurrentPage(p as Page)}
-                />
+                <React.Suspense fallback={<Carregando />}>
+                  <PageContent
+                    page={currentPage}
+                    onNavigate={(p) => setCurrentPage(p as Page)}
+                  />
+                </React.Suspense>
               </motion.div>
             </AnimatePresence>
           </AppLayout>

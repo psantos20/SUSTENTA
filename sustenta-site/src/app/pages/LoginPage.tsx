@@ -5,7 +5,8 @@ import { auth, googleProvider, db } from '../../services/firebase';
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signInWithPopup, sendEmailVerification } from 'firebase/auth';
 import { LIMITES, limparTexto, validarSenha } from '../../services/validacao';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
-import MapaBrasil from '../components/MapaBrasil';
+// O mapa (D3 + TopoJSON) só é necessário no 2º passo do cadastro: carrega sob demanda.
+const MapaBrasil = React.lazy(() => import('../components/MapaBrasil'));
 
 interface LoginPageProps {
   onLogin: () => void;
@@ -390,6 +391,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, onNavigate }) => 
               >
                 <p className="text-sm text-slate-500">Clique no seu estado no mapa:</p>
 
+                <React.Suspense fallback={<p className="text-sm text-slate-400">Carregando mapa...</p>}>
                 <MapaBrasil
                   estadoSelecionado={estado}
                   cidadeSelecionada={cidade}
@@ -403,6 +405,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, onNavigate }) => 
                     setErro('');
                   }}
                 />
+                </React.Suspense>
 
                 <div className="flex gap-3 pt-2">
                   <button
