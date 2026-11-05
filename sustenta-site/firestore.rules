@@ -141,8 +141,8 @@ service cloud.firestore {
         return d.keys().hasOnly(['uid', 'categoria', 'subcategoria', 'valor', 'descricao', 'mes', 'criadoEm'])
           && d.uid == request.auth.uid
           && d.categoria in ['energia', 'agua', 'outro']
-          && d.valor is number && d.valor > 0 && d.valor <= 1000000
-          && d.mes is string && d.mes.matches('^[0-9]{4}-(0[1-9]|1[0-2])$')
+          && d.valor is number && d.valor >= 0.01 && d.valor <= 1000000
+          && d.mes is string && d.mes.matches('^20[0-9]{2}-(0[1-9]|1[0-2])$')
           && optionalShortString(d, 'descricao', 300)
           && optionalShortString(d, 'subcategoria', 60);
       }

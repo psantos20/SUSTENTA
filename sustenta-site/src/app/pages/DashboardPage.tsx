@@ -3,7 +3,7 @@ import { Zap, Droplets, Wallet, CheckCircle2, Calendar, AlertCircle, ArrowUpRigh
 import { StatCard } from '../components/dashboard/StatCard';
 import { CategoryChart } from '../components/dashboard/SustainabilityChart';
 import { motion } from 'motion/react';
-import { buscarRegistrosMes, calcularNivel } from '../../services/consumo';
+import { buscarRegistrosMes, buscarTodosRegistros, calcularNivel } from '../../services/consumo';
 
 interface DashboardPageProps {
   onNavigate?: (page: string) => void;
@@ -179,6 +179,8 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
   const [agua, setAgua] = React.useState(0);
   const [outro, setOutro] = React.useState(0);
   const [totalRegistros, setTotalRegistros] = React.useState(0);
+  // Nível/XP é acumulado: conta todos os registros, não só os do mês (igual à Sidebar e ao Perfil).
+  const [totalGeral, setTotalGeral] = React.useState(0);
   const [subcategorias, setSubcategorias] = React.useState<Record<string, number>>({});
 
   React.useEffect(() => {
@@ -198,8 +200,12 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
     });
   }, [mes]);
 
+  React.useEffect(() => {
+    buscarTodosRegistros().then(r => setTotalGeral(r.length)).catch(() => {});
+  }, []);
+
   const total = energia + agua + outro;
-  const nivel = calcularNivel(totalRegistros);
+  const nivel = calcularNivel(totalGeral);
   const score = Math.min(100, Math.max(0, Math.round(100 - (total / 10))));
   const mesLabel = new Date(mes + '-02').toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
 

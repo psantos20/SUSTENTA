@@ -36,6 +36,7 @@ export const ConsumptionPage: React.FC = () => {
   const [salvando, setSalvando]                 = React.useState(false);
   const [sucesso, setSucesso]                   = React.useState(false);
   const [erro, setErro]                         = React.useState('');
+  const [erroEdicao, setErroEdicao]             = React.useState('');
   const [registros, setRegistros]               = React.useState<Registro[]>([]);
   const [carregando, setCarregando]             = React.useState(true);
   const [editandoId, setEditandoId]             = React.useState<string | null>(null);
@@ -101,6 +102,7 @@ export const ConsumptionPage: React.FC = () => {
   };
 
   const handleEdit = (r: Registro) => {
+    setErroEdicao('');
     setEditandoId(r.id);
     setEditValor(String(r.valor));
     setEditDescricao(r.descricao);
@@ -109,11 +111,17 @@ export const ConsumptionPage: React.FC = () => {
   const handleSaveEdit = async (id: string) => {
     const novoValor = parseFloat(editValor);
     const erroValor = validarValor(novoValor);
-    if (erroValor) { setErro(erroValor); return; }
-    await updateDoc(doc(db, 'registros', id), {
-      valor: novoValor,
-      descricao: limparTexto(editDescricao, LIMITES.descricao),
-    });
+    if (erroValor) { setErroEdicao(erroValor); return; }
+    try {
+      await updateDoc(doc(db, 'registros', id), {
+        valor: novoValor,
+        descricao: limparTexto(editDescricao, LIMITES.descricao),
+      });
+    } catch {
+      setErroEdicao('Erro ao salvar. Tente novamente.');
+      return;
+    }
+    setErroEdicao('');
     setEditandoId(null);
     carregarRegistros();
   };
@@ -197,7 +205,7 @@ export const ConsumptionPage: React.FC = () => {
             <label className="text-sm font-medium text-slate-700 dark:text-slate-300 block mb-2">Valor (R$)</label>
             <div className="relative">
               <span className="absolute inset-y-0 left-4 flex items-center text-slate-400 font-bold">R$</span>
-              <input type="number" min="0" max={LIMITES.valorMax} step="0.01" required value={valor} onChange={e => setValor(e.target.value)}
+              <input type="number" min="0.01" max={LIMITES.valorMax} step="0.01" required value={valor} onChange={e => setValor(e.target.value)}
                 className="w-full pl-12 pr-4 py-3 border border-slate-200 dark:border-slate-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 text-slate-900 dark:text-slate-100 text-lg font-bold bg-white dark:bg-slate-700"
                 placeholder="0,00" />
             </div>
@@ -274,10 +282,13 @@ export const ConsumptionPage: React.FC = () => {
                   <div className="flex-1 min-w-0">
                     {isEditando ? (
                       <div className="flex gap-2 flex-wrap">
-                        <input type="number" value={editValor} onChange={e => setEditValor(e.target.value)}
+                        <input type="number" min="0.01" max={LIMITES.valorMax} step="0.01" value={editValor} onChange={e => { setEditValor(e.target.value); setErroEdicao(''); }}
                           className="border border-slate-200 dark:border-slate-600 rounded-lg px-2 py-1 text-sm w-24 focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100" />
                         <input type="text" maxLength={LIMITES.descricao} value={editDescricao} onChange={e => setEditDescricao(e.target.value)}
                           className="border border-slate-200 dark:border-slate-600 rounded-lg px-2 py-1 text-sm flex-1 focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100" placeholder="Descrição" />
+                        {erroEdicao && (
+                          <p role="alert" className="w-full text-red-500 dark:text-red-400 text-xs">{erroEdicao}</p>
+                        )}
                       </div>
                     ) : (
                       <>
@@ -294,7 +305,7 @@ export const ConsumptionPage: React.FC = () => {
                     {isEditando ? (
                       <>
                         <button onClick={() => handleSaveEdit(r.id)} className="p-2 text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 rounded-lg"><Check className="w-4 h-4" /></button>
-                        <button onClick={() => setEditandoId(null)} className="p-2 text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-lg"><X className="w-4 h-4" /></button>
+                        <button onClick={() => { setEditandoId(null); setErroEdicao(''); }} className="p-2 text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-lg"><X className="w-4 h-4" /></button>
                       </>
                     ) : (
                       <>

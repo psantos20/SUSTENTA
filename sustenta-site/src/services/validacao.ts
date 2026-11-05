@@ -22,18 +22,26 @@ export const LIMITES = {
 export const CATEGORIAS_REGISTRO = ['energia', 'agua', 'outro'] as const;
 export type CategoriaRegistro = (typeof CATEGORIAS_REGISTRO)[number];
 
-const MES_REGEX = /^\d{4}-(0[1-9]|1[0-2])$/;
+// Anos aceitos: 2000–2099 (mesma faixa do regex em firestore.rules).
+const MES_REGEX = /^20\d{2}-(0[1-9]|1[0-2])$/;
 
 export function limparTexto(texto: string | null | undefined, max: number): string {
   // Remove caracteres de controle e limita o tamanho.
+  // Corta por caractere (code point), não por unidade UTF-16, para nunca deixar
+  // meio emoji (surrogate solto) no texto salvo.
   // eslint-disable-next-line no-control-regex
-  return (texto ?? '').replace(/[\u0000-\u001F\u007F]/g, ' ').trim().slice(0, max);
+  const limpo = (texto ?? '').replace(/[\u0000-\u001F\u007F]/g, ' ').trim();
+  return Array.from(limpo).slice(0, max).join('');
 }
 
 /** Retorna uma mensagem de erro ou null se estiver tudo certo. */
 export function validarValor(valor: number): string | null {
   if (!Number.isFinite(valor) || valor <= 0) return 'Informe um valor válido.';
   if (valor > LIMITES.valorMax) return 'Valor muito alto. Confira o número digitado.';
+  // Moeda tem no máximo 2 casas decimais (menor valor aceito: R$ 0,01).
+  if (Math.abs(valor * 100 - Math.round(valor * 100)) > 1e-6) {
+    return 'Use no máximo 2 casas decimais (ex.: 12,50).';
+  }
   return null;
 }
 
@@ -43,7 +51,7 @@ export function validarMes(mes: string): string | null {
 
 export function validarSenha(senha: string): string | null {
   if (senha.length < LIMITES.senhaMin) return `A senha precisa ter ao menos ${LIMITES.senhaMin} caracteres.`;
-  if (!/[A-Za-z]/.test(senha) || !/\d/.test(senha)) return 'Use letras e números na senha.';
+  if (!/\p{L}/u.test(senha) || !/\d/.test(senha)) return 'Use letras e números na senha.';
   return null;
 }
 

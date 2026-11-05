@@ -127,6 +127,10 @@ describe('registros', () => {
     await assertFails(setDoc(doc(db(ALICE), 'registros', 'r4'), registro(ALICE, { mes: '2026-13' })));
     await assertFails(setDoc(doc(db(ALICE), 'registros', 'r5'), registro(ALICE, { descricao: 'x'.repeat(301) })));
     await assertFails(setDoc(doc(db(ALICE), 'registros', 'r6'), registro(ALICE, { criadoEm: Timestamp.fromDate(new Date('2020-01-01')) })));
+    await assertFails(setDoc(doc(db(ALICE), 'registros', 'r7'), registro(ALICE, { valor: 0.001 })));
+    await assertFails(setDoc(doc(db(ALICE), 'registros', 'r8'), registro(ALICE, { mes: '0001-01' })));
+    await assertFails(setDoc(doc(db(ALICE), 'registros', 'r9'), registro(ALICE, { mes: '9999-12' })));
+    await assertSucceeds(setDoc(doc(db(ALICE), 'registros', 'r10'), registro(ALICE, { valor: 0.01 })));
   });
 
   it('só o dono lista, edita e apaga', async () => {

@@ -907,7 +907,9 @@ export default function ReportsPage() {
         .reduce((s, r) => s + r.valor, 0);
 
       const scoreAnterior = regAnt.length > 0 ? calcularScore(eAnt, aAnt, oAnt) : scoreMes;
-      const xpTotal = registros.length * 100;
+      // Nível acumulado: conta todos os registros do usuário (igual à Sidebar e ao Perfil).
+      const snapTodos = await getDocs(query(collection(db, 'registros'), where('uid', '==', uid)));
+      const xpTotal = snapTodos.size * 100;
       const nivel = getNivel(xpTotal);
       const maioresGastos = [...registros].sort((a, b) => b.valor - a.valor).slice(0, 5);
 
