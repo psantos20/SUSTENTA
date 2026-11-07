@@ -39,6 +39,9 @@ export interface ProgressoDesafio {
 }
 
 
+import type { DicasDoDia } from './dicas';
+
+
 export interface DadosUsuarioHabitos {
   uid: string;
   streak: number;
@@ -50,4 +53,6 @@ export interface DadosUsuarioHabitos {
   progressoHabitos: ProgressoHabito[];
   progressoDesafios: ProgressoDesafio[];
   xpHabitos: number;
+  /** Respostas às dicas do dia (opcional: contas antigas não têm). */
+  dicasDoDia?: DicasDoDia;
 }

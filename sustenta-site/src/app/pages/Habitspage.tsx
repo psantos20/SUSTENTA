@@ -3,6 +3,7 @@ import { Loader2 } from 'lucide-react';
 import { AnimatePresence } from 'motion/react';
 import { ModaisHabitos } from './habits/ModaisHabitos';
 import { DesafiosTab } from './habits/DesafiosTab';
+import { DicasTab } from './habits/DicasTab';
 import { RankingTab } from './habits/RankingTab';
 import { HabitosTab } from './habits/HabitosTab';
 import { useHabitos } from './habits/useHabitos';
@@ -35,12 +36,13 @@ export const HabitsPage: React.FC = () => {
           {[
             { id: 'habitos', label: 'Checklist Diário' },
             { id: 'desafios', label: 'Desafios Mensais' },
+            { id: 'dicas', label: 'Dicas do Dia' },
             { id: 'ranking', label: 'Ranking' },
           ].map((tab) => (
             <button
               key={tab.id}
-              onClick={() => setActiveTab(tab.id as 'habitos' | 'desafios' | 'ranking')}
-              className={`px-5 py-2 rounded-lg font-bold text-sm transition-all ${
+              onClick={() => setActiveTab(tab.id as 'habitos' | 'desafios' | 'dicas' | 'ranking')}
+              className={`px-4 py-2 rounded-lg font-bold text-sm whitespace-nowrap transition-all ${
                 activeTab === tab.id
                   ? 'bg-white dark:bg-slate-600 text-emerald-600 dark:text-emerald-400 shadow-sm'
                   : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
@@ -59,6 +61,10 @@ export const HabitsPage: React.FC = () => {
 
         {activeTab === 'desafios' && (
 <DesafiosTab key="desafios" {...ctx} />
+        )}
+
+        {activeTab === 'dicas' && (
+<DicasTab key="dicas" {...ctx} />
         )}
 
         {activeTab === 'ranking' && (

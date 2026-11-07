@@ -234,6 +234,19 @@ describe('família', () => {
     await assertFails(updateDoc(doc(db(EVE), 'habitos_usuarios', ALICE), { streak: 3 }));
   });
 
+  it('dicas do dia: aceita o formato esperado e rejeita lixo', async () => {
+    await seedGrupo(false);
+    const ref = doc(db(ALICE), 'habitos_usuarios', ALICE);
+    await assertSucceeds(updateDoc(ref, { dicasDoDia: { data: '2026-10-23', respostas: { d01: 'ja_faco', d11: 'vou_fazer' } }, xpHabitos: 20 }));
+    await assertFails(updateDoc(ref, { dicasDoDia: 'x' }));
+    await assertFails(updateDoc(ref, { dicasDoDia: { data: '23/10/2026', respostas: {} } }));
+    await assertFails(updateDoc(ref, { dicasDoDia: { data: '2026-10-23', respostas: {}, extra: 1 } }));
+    await assertFails(updateDoc(ref, { dicasDoDia: { data: '2026-10-23', respostas: 'x' } }));
+    const muitas = Object.fromEntries(Array.from({ length: 11 }, (_, i) => [`d${i}`, 'pulei']));
+    await assertFails(updateDoc(ref, { dicasDoDia: { data: '2026-10-23', respostas: muitas } }));
+    await assertFails(updateDoc(ref, { xpHabitos: 5000 }));
+  });
+
   it('gastos só ficam visíveis à família se o dono autorizar', async () => {
     await seedGrupo(false);
     await assertFails(getDocs(query(collection(db(BOB), 'registros'), where('uid', '==', ALICE))));

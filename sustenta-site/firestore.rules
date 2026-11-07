@@ -189,8 +189,16 @@ service cloud.firestore {
       function habitosKeys() {
         return [
           'uid', 'streak', 'maiorStreak', 'ultimoRegistro', 'diasAtivos', 'habitosPersonalizados',
-          'progressoHabitos', 'progressoDesafios', 'xpHabitos'
+          'progressoHabitos', 'progressoDesafios', 'xpHabitos', 'dicasDoDia'
         ];
+      }
+
+      // { data: 'AAAA-MM-DD', respostas: { <id da dica>: 'ja_faco' | ... } } (até 10 dicas)
+      function validDicasDoDia(x) {
+        return x is map
+          && x.keys().hasOnly(['data', 'respostas'])
+          && x.data is string && x.data.size() == 10
+          && x.respostas is map && x.respostas.size() <= 10;
       }
 
       function validHabitos() {
@@ -198,6 +206,7 @@ service cloud.firestore {
         return (!('uid' in d) || d.uid == uid)
           && (!('streak' in d) || (d.streak is number && d.streak >= 0 && d.streak <= 100000))
           && (!('maiorStreak' in d) || (d.maiorStreak is number && d.maiorStreak >= 0 && d.maiorStreak <= 100000))
+          && (!('dicasDoDia' in d) || validDicasDoDia(d.dicasDoDia))
           && (!('habitosPersonalizados' in d) || (d.habitosPersonalizados is list && d.habitosPersonalizados.size() <= 50))
           && (!('progressoDesafios' in d) || (d.progressoDesafios is list && d.progressoDesafios.size() <= 100))
           && xpDeltaOk('xpHabitos', 1000);

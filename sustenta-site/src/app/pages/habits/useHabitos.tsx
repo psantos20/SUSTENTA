@@ -5,12 +5,14 @@ import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
 import { useNotificacoes } from '../../contexts/NotificacoesPage';
 import type { Categoria, DadosUsuarioHabitos, Desafio, Habito, ProgressoDesafio, ProgressoHabito } from './tipos';
 import { HABITOS_PREDEFINIDOS, hoje, ultimos7Dias } from './dados';
+import { dicasDoDia, respostasDeHoje, transicaoDica, resumoDoDia } from './dicas';
+import type { Dica, RespostaDica } from './dicas';
 import { bonusDosMarcos, marcosAlcancados, ofensivaAposMarcar, ofensivaAtual, ofensivaEmRisco, proximoMarco } from './ofensiva';
 
 export function useHabitos() {
   const { recarregar: recarregarNotifs } = useNotificacoes();
 
-  const [activeTab, setActiveTab] = React.useState<'habitos' | 'desafios' | 'ranking'>('habitos');
+  const [activeTab, setActiveTab] = React.useState<'habitos' | 'desafios' | 'dicas' | 'ranking'>('habitos');
   const [dados, setDados] = React.useState<DadosUsuarioHabitos | null>(null);
   const [carregando, setCarregando] = React.useState(true);
   const [salvando, setSalvando] = React.useState<string | null>(null);
@@ -338,6 +340,45 @@ export function useHabitos() {
     }
   };
 
+  const responderDica = async (dica: Dica, resposta: RespostaDica) => {
+    const user = auth.currentUser;
+    if (!user || !dados) return;
+
+    const dataHoje = hoje();
+    const atuais = respostasDeHoje(dados.dicasDoDia, dataHoje);
+    const { permitida, xp } = transicaoDica(atuais[dica.id], resposta, dica.esforco);
+    if (!permitida) return;
+
+    setSalvando(`dica:${dica.id}`);
+
+    const novasDicas = { data: dataHoje, respostas: { ...atuais, [dica.id]: resposta } };
+    const novoXP = (dados.xpHabitos || 0) + xp;
+
+    try {
+      await setDoc(
+        doc(db, 'habitos_usuarios', user.uid),
+        { dicasDoDia: novasDicas, xpHabitos: novoXP },
+        { merge: true }
+      );
+
+      setDados((prev) => (prev ? { ...prev, dicasDoDia: novasDicas, xpHabitos: novoXP } : prev));
+
+      if (xp > 0) {
+        try {
+          const userSnap = await getDoc(doc(db, 'usuarios', user.uid));
+          const xpAtual = userSnap.data()?.xpHabitos || 0;
+          await setDoc(doc(db, 'usuarios', user.uid), { xpHabitos: xpAtual + xp }, { merge: true });
+        } catch (erroPerfil) {
+          console.warn('XP do perfil não foi atualizado, mas a dica foi salva:', erroPerfil);
+        }
+      }
+    } catch (e) {
+      console.error('Erro ao responder dica:', e);
+    } finally {
+      setSalvando(null);
+    }
+  };
+
   const criarHabito = async () => {
     if (!novoTitulo.trim()) return;
 
@@ -411,6 +452,10 @@ export function useHabitos() {
   const marcoSeguinte = proximoMarco(streak);
   const xpHabitos = dados?.xpHabitos || 0;
 
+  const dicasHoje = dicasDoDia(dataHoje);
+  const respostasDicas = respostasDeHoje(dados?.dicasDoDia, dataHoje);
+  const resumoDicas = resumoDoDia(dicasHoje, respostasDicas);
+
   return {
     recarregarNotifs,
     activeTab,
@@ -438,6 +483,10 @@ export function useHabitos() {
     alternarHabito,
     participarDesafio,
     avancarDesafio,
+    responderDica,
+    dicasHoje,
+    respostasDicas,
+    resumoDicas,
     criarHabito,
     deletarHabito,
     todosHabitos,
