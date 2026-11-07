@@ -1,6 +1,6 @@
 import React from 'react';
 import {
-  BarChart3, TrendingDown, TrendingUp, Zap, Droplets,
+  BarChart3, TrendingDown, TrendingUp, Zap, Droplets, Car,
   Wallet, Calendar, Activity, Search, Filter,
   CheckCircle2, Trash2, Loader2, X, Download,
   ArrowUpRight, ArrowDownRight, Minus, Sparkles,
@@ -16,14 +16,16 @@ import { useFeedback } from '../contexts/FeedbackContext';
 import {
   collection, query, where, getDocs, deleteDoc, doc
 } from 'firebase/firestore';
+import { unidadeDeQuantidade } from '../../services/transporte';
 
 // ─── Tipos ───────────────────────────────────────────────────────────────────
 
 interface Registro {
   id: string;
-  categoria: 'energia' | 'agua' | 'outro';
+  categoria: 'energia' | 'agua' | 'transporte' | 'outro';
   subcategoria?: string;
   valor: number;
+  quantidade?: number | null;
   mes: string;
   descricao: string;
   criadoEm?: { seconds: number };
@@ -35,6 +37,7 @@ interface DadosMes {
   valor: number;
   energia: number;
   agua: number;
+  transporte: number;
   outro: number;
 }
 
@@ -56,6 +59,7 @@ function mesParaLabelLongo(mes: string): string {
 function registroLabel(r: Registro): string {
   if (r.categoria === 'energia') return 'Energia';
   if (r.categoria === 'agua')    return 'Água';
+  if (r.categoria === 'transporte') return r.subcategoria ? `Transporte: ${r.subcategoria}` : 'Transporte';
   return r.subcategoria || 'Outro';
 }
 
@@ -76,6 +80,7 @@ function useDarkMode() {
 const COR_CAT: Record<string, { bg: string; text: string; icon: React.ElementType; cor: string; corDark: string }> = {
   energia: { bg: 'bg-amber-50 dark:bg-amber-900/20',     text: 'text-amber-600 dark:text-amber-400',     icon: Zap,      cor: '#f59e0b', corDark: '#fbbf24' },
   agua:    { bg: 'bg-blue-50 dark:bg-blue-900/20',       text: 'text-blue-600 dark:text-blue-400',       icon: Droplets, cor: '#3b82f6', corDark: '#60a5fa' },
+  transporte: { bg: 'bg-violet-50 dark:bg-violet-900/20', text: 'text-violet-600 dark:text-violet-400',   icon: Car,      cor: '#8b5cf6', corDark: '#a78bfa' },
   outro:   { bg: 'bg-emerald-50 dark:bg-emerald-900/20', text: 'text-emerald-600 dark:text-emerald-400', icon: Wallet,   cor: '#10b981', corDark: '#34d399' },
 };
 
@@ -83,13 +88,16 @@ const COR_CAT: Record<string, { bg: string; text: string; icon: React.ElementTyp
 
 function exportarCSV(registros: Registro[]) {
   const linhas = [
-    ['Mês', 'Categoria', 'Subcategoria', 'Descrição', 'Valor (R$)'],
+    ['Mês', 'Categoria', 'Subcategoria', 'Descrição', 'Valor (R$)', 'Quantidade'],
     ...registros.map(r => [
       mesParaLabelLongo(r.mes),
       registroLabel(r),
       r.subcategoria || '',
       r.descricao || '',
       r.valor.toFixed(2).replace('.', ','),
+      r.quantidade != null && unidadeDeQuantidade(r.categoria, r.subcategoria)
+        ? `${String(r.quantidade).replace('.', ',')} ${unidadeDeQuantidade(r.categoria, r.subcategoria)}`
+        : '',
     ])
   ];
   const csv = linhas.map(l => l.map(c => `"${c}"`).join(';')).join('\n');
@@ -160,7 +168,7 @@ export const HistoryPage: React.FC = () => {
   const [registros,      setRegistros]      = React.useState<Registro[]>([]);
   const [carregando,     setCarregando]      = React.useState(true);
   const [busca,          setBusca]           = React.useState('');
-  const [filtroCat,      setFiltroCat]       = React.useState<'todos' | 'energia' | 'agua' | 'outro'>('todos');
+  const [filtroCat,      setFiltroCat]       = React.useState<'todos' | 'energia' | 'agua' | 'transporte' | 'outro'>('todos');
   const [filtroMes,      setFiltroMes]       = React.useState('todos');
   const [mostrarFiltros, setMostrarFiltros]  = React.useState(false);
   const [paginaAtual,    setPaginaAtual]     = React.useState(1);
@@ -189,7 +197,7 @@ export const HistoryPage: React.FC = () => {
   const dadosPorMes = React.useMemo((): DadosMes[] => {
     const map: Record<string, DadosMes> = {};
     registros.forEach(r => {
-      if (!map[r.mes]) map[r.mes] = { month: mesParaLabel(r.mes), mesKey: r.mes, valor: 0, energia: 0, agua: 0, outro: 0 };
+      if (!map[r.mes]) map[r.mes] = { month: mesParaLabel(r.mes), mesKey: r.mes, valor: 0, energia: 0, agua: 0, transporte: 0, outro: 0 };
       map[r.mes].valor        += r.valor;
       map[r.mes][r.categoria] += r.valor;
     });
@@ -211,18 +219,20 @@ export const HistoryPage: React.FC = () => {
   const totalGeral   = registros.reduce((s, r) => s + r.valor, 0) || 1;
   const totalEnergia = registros.filter(r => r.categoria === 'energia').reduce((s, r) => s + r.valor, 0);
   const totalAgua    = registros.filter(r => r.categoria === 'agua').reduce((s, r) => s + r.valor, 0);
+  const totalTransporte = registros.filter(r => r.categoria === 'transporte').reduce((s, r) => s + r.valor, 0);
   const totalOutro   = registros.filter(r => r.categoria === 'outro').reduce((s, r) => s + r.valor, 0);
 
   const donutData = [
     { name: 'Energia', value: totalEnergia, cor: dark ? '#fbbf24' : '#f59e0b' },
     { name: 'Água',    value: totalAgua,    cor: dark ? '#60a5fa' : '#3b82f6' },
+    { name: 'Transporte', value: totalTransporte, cor: dark ? '#a78bfa' : '#8b5cf6' },
     { name: 'Outros',  value: totalOutro,   cor: dark ? '#34d399' : '#10b981' },
   ].filter(d => d.value > 0);
 
   // ─── Tendências por categoria (vs mês anterior) ───────────────────────────
   const mesAtualKey    = dadosPorMes.at(-1)?.mesKey;
   const mesAnteriorKey = dadosPorMes.at(-2)?.mesKey;
-  const tendencias = ['energia', 'agua', 'outro'].map(cat => {
+  const tendencias = ['energia', 'agua', 'transporte', 'outro'].map(cat => {
     const atual    = registros.filter(r => r.categoria === cat && r.mes === mesAtualKey).reduce((s, r) => s + r.valor, 0);
     const anterior = registros.filter(r => r.categoria === cat && r.mes === mesAnteriorKey).reduce((s, r) => s + r.valor, 0);
     const delta    = anterior > 0 ? Math.round(((atual - anterior) / anterior) * 100) : 0;
@@ -449,7 +459,7 @@ export const HistoryPage: React.FC = () => {
               <div className="space-y-4">
                 {tendencias.map(({ cat, atual, delta }) => {
                   const { bg, text, icon: Icon, cor } = COR_CAT[cat];
-                  const label = cat === 'agua' ? 'Água' : cat === 'energia' ? 'Energia' : 'Outros';
+                  const label = cat === 'agua' ? 'Água' : cat === 'energia' ? 'Energia' : cat === 'transporte' ? 'Transporte' : 'Outros';
                   const TrendIcon = delta > 0 ? ArrowUpRight : delta < 0 ? ArrowDownRight : Minus;
                   const trendColor = delta > 0 ? 'text-red-500' : delta < 0 ? 'text-emerald-500' : 'text-slate-400';
                   return (
@@ -585,6 +595,7 @@ export const HistoryPage: React.FC = () => {
                         { id: 'todos',   label: 'Todos'   },
                         { id: 'energia', label: 'Energia' },
                         { id: 'agua',    label: 'Água'    },
+                        { id: 'transporte', label: 'Transporte' },
                         { id: 'outro',   label: 'Outros'  },
                       ] as const).map(f => (
                         <button key={f.id} onClick={() => { setFiltroCat(f.id); setPaginaAtual(1); }}

@@ -1,11 +1,13 @@
 export function DonutChart({
   energia,
   agua,
+  transporte,
   outro,
   total,
 }: {
   energia: number;
   agua: number;
+  transporte: number;
   outro: number;
   total: number;
 }) {
@@ -18,6 +20,7 @@ export function DonutChart({
   const slices = [
     { valor: energia, color: '#eab308', label: 'Energia' },
     { valor: agua, color: '#3b82f6', label: 'Água' },
+    { valor: transporte, color: '#f97316', label: 'Transporte' },
     { valor: outro, color: '#8b5cf6', label: 'Outros' },
   ];
 

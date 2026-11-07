@@ -3,10 +3,10 @@ import { collection, query, where, getDocs } from 'firebase/firestore';
 
 export interface Registro {
   id: string;
-  categoria: 'energia' | 'agua' | 'outro';
+  categoria: 'energia' | 'agua' | 'transporte' | 'outro';
   subcategoria?: string;
   valor: number;
-  /** Quantidade consumida, opcional: kWh (energia) ou m³ (água). */
+  /** Quantidade consumida, opcional: kWh (energia), m³ (água) ou litros/m³ de combustível (transporte). */
   quantidade?: number | null;
   mes: string;
   descricao: string;

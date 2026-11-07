@@ -1,5 +1,5 @@
 import React from 'react';
-import { Target, Zap, Droplets, Wallet, Pencil, Check, X, Loader2 } from 'lucide-react';
+import { Target, Zap, Droplets, Car, Wallet, Pencil, Check, X, Loader2 } from 'lucide-react';
 import { useFeedback } from '../../contexts/FeedbackContext';
 import {
   buscarMetas, salvarMetas, calcularProgresso, validarMeta,
@@ -11,8 +11,8 @@ interface MetasCardProps {
   mesLabel: string;
 }
 
-const ROTULO: Record<CategoriaMeta, string> = { energia: 'Energia', agua: 'Água', outro: 'Outros gastos' };
-const ICONE: Record<CategoriaMeta, React.ElementType> = { energia: Zap, agua: Droplets, outro: Wallet };
+const ROTULO: Record<CategoriaMeta, string> = { energia: 'Energia', agua: 'Água', transporte: 'Transporte', outro: 'Outros gastos' };
+const ICONE: Record<CategoriaMeta, React.ElementType> = { energia: Zap, agua: Droplets, transporte: Car, outro: Wallet };
 
 const COR_BARRA: Record<StatusMeta, string> = {
   ok: 'bg-emerald-500',
@@ -34,7 +34,7 @@ export const MetasCard: React.FC<MetasCardProps> = ({ gastos, mesLabel }) => {
   const [carregando, setCarregando] = React.useState(true);
   const [editando, setEditando] = React.useState(false);
   const [salvando, setSalvando] = React.useState(false);
-  const [campos, setCampos] = React.useState<Record<CategoriaMeta, string>>({ energia: '', agua: '', outro: '' });
+  const [campos, setCampos] = React.useState<Record<CategoriaMeta, string>>({ energia: '', agua: '', transporte: '', outro: '' });
   const [erros, setErros] = React.useState<Partial<Record<CategoriaMeta, string>>>({});
 
   React.useEffect(() => {
@@ -50,6 +50,7 @@ export const MetasCard: React.FC<MetasCardProps> = ({ gastos, mesLabel }) => {
     setCampos({
       energia: metas.energia != null ? String(metas.energia) : '',
       agua: metas.agua != null ? String(metas.agua) : '',
+      transporte: metas.transporte != null ? String(metas.transporte) : '',
       outro: metas.outro != null ? String(metas.outro) : '',
     });
     setErros({});
@@ -170,7 +171,7 @@ export const MetasCard: React.FC<MetasCardProps> = ({ gastos, mesLabel }) => {
         </form>
       ) : !temMeta ? (
         <p className="text-sm text-slate-500 dark:text-slate-400">
-          Você ainda não definiu metas. Escolha um limite mensal para energia, água ou outros gastos e acompanhe aqui.
+          Você ainda não definiu metas. Escolha um limite mensal para energia, água, transporte ou outros gastos e acompanhe aqui.
         </p>
       ) : (
         <div className="space-y-5">

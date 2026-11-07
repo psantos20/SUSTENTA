@@ -101,9 +101,10 @@ service cloud.firestore {
 
       function validMetas(m) {
         return m is map
-          && m.keys().hasOnly(['energia', 'agua', 'outro'])
+          && m.keys().hasOnly(['energia', 'agua', 'transporte', 'outro'])
           && validMetaValor(m, 'energia')
           && validMetaValor(m, 'agua')
+          && validMetaValor(m, 'transporte')
           && validMetaValor(m, 'outro');
       }
 
@@ -151,18 +152,18 @@ service cloud.firestore {
     // ---------- registros/{id} ----------
     // Gastos de consumo. Família só lê se o dono autorizou "gastos".
     match /registros/{id} {
-      // Quantidade (kWh/m³) é opcional e só faz sentido para energia e água.
+      // Quantidade (kWh, m³ ou litros) é opcional e só faz sentido fora de "outro".
       function validQuantidade(d) {
         return !('quantidade' in d)
           || d.quantidade == null
-          || (d.categoria in ['energia', 'agua']
+          || (d.categoria in ['energia', 'agua', 'transporte']
               && d.quantidade is number && d.quantidade > 0 && d.quantidade <= 1000000);
       }
 
       function validRegistro(d) {
         return d.keys().hasOnly(['uid', 'categoria', 'subcategoria', 'valor', 'quantidade', 'descricao', 'mes', 'criadoEm'])
           && d.uid == request.auth.uid
-          && d.categoria in ['energia', 'agua', 'outro']
+          && d.categoria in ['energia', 'agua', 'transporte', 'outro']
           && d.valor is number && d.valor >= 0.01 && d.valor <= 1000000
           && validQuantidade(d)
           && d.mes is string && d.mes.matches('^20[0-9]{2}-(0[1-9]|1[0-2])$')

@@ -2,9 +2,10 @@
 export interface Registro {
   id: string;
   uid: string;
-  categoria: 'energia' | 'agua' | 'outro';
+  categoria: 'energia' | 'agua' | 'transporte' | 'outro';
   subcategoria?: string;
   valor: number;
+  quantidade?: number | null;
   mes: string;
   descricao: string;
   criadoEm: any;
@@ -27,6 +28,7 @@ export interface ReportData {
   totalGeral: number;
   totalEnergia: number;
   totalAgua: number;
+  totalTransporte: number;
   totalOutro: number;
   scoreAnterior: number;
   scoreMes: number;
@@ -45,6 +47,7 @@ export interface HistoricoMes {
   total: number;
   energia: number;
   agua: number;
+  transporte: number;
   outro: number;
   score: number;
 }

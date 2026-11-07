@@ -14,7 +14,7 @@ interface StatCardProps {
   unit?: string;
   icon: React.ElementType;
   trend?: { value: number; isUp: boolean };
-  color: 'emerald' | 'blue' | 'amber' | 'indigo';
+  color: 'emerald' | 'blue' | 'amber' | 'indigo' | 'violet';
   delay?: number;
 }
 
@@ -26,6 +26,7 @@ export const StatCard: React.FC<StatCardProps> = ({
     blue:    'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-400',
     amber:   'bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400',
     indigo:  'bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-400',
+    violet:  'bg-violet-100 dark:bg-violet-900/40 text-violet-700 dark:text-violet-400',
   };
 
   return (

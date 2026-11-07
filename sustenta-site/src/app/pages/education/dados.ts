@@ -141,12 +141,36 @@ export const DESAFIOS_SEMANA = [
 export const FATOR_ENERGIA_KG_POR_KWH = 0.0385;
 
 /**
+ * Combustíveis (transporte): kg CO2 por litro (GNV: por m³), emissão da queima
+ * no veículo, SEM o CO2 biogênico (reabsorvido pela cana/soja; o inventário
+ * oficial e o GHG Protocol o reportam separado). Calculado a partir de:
+ *  - intensidade "tanque-à-roda" em g CO2e/MJ e poder calorífico (MJ/L ou MJ/m³)
+ *    da Nota Técnica AEA/EPE 2025 (ano-base 2024): gasolina A 71,3 g/MJ e
+ *    32,31 MJ/L; diesel A 74,4 g/MJ e 35,52 MJ/L; GNV 57,81 g/MJ e
+ *    36,84 MJ/m³; etanol hidratado 0,66 g/MJ e 21,34 MJ/L (só CH4 e N2O).
+ *  - mistura vigente desde 01/08/2025: gasolina com 30% de etanol anidro (E30)
+ *    e diesel com 15% de biodiesel (B15); só a parte fóssil conta.
+ * São contas do projeto sobre esses dados (não valores publicados prontos).
+ */
+const GASOLINA_A_KG_POR_L = (71.3 * 32.31) / 1000; // ~2,30
+const DIESEL_A_KG_POR_L = (74.4 * 35.52) / 1000; // ~2,64
+export const PERCENTUAL_ETANOL_NA_GASOLINA = 0.3;
+export const PERCENTUAL_BIODIESEL_NO_DIESEL = 0.15;
+
+export const FATOR_COMBUSTIVEL = {
+  Gasolina: { kg: GASOLINA_A_KG_POR_L * (1 - PERCENTUAL_ETANOL_NA_GASOLINA), unidade: 'L' }, // ~1,61
+  Etanol: { kg: (0.66 * 21.34) / 1000, unidade: 'L' }, // ~0,014
+  Diesel: { kg: DIESEL_A_KG_POR_L * (1 - PERCENTUAL_BIODIESEL_NO_DIESEL), unidade: 'L' }, // ~2,25
+  GNV: { kg: (57.81 * 36.84) / 1000, unidade: 'm³' }, // ~2,13
+} as const;
+
+/**
  * ESTIMATIVAS por real gasto (kg CO2 por R$), usadas só quando o usuário NÃO
  * informou a quantidade (kWh/m³). São valores aproximados, sem fonte oficial:
  * a conta em R$ depende da tarifa de cada cidade. Água e "outros" ainda usam
  * sempre a estimativa (não há fator oficial adotado no projeto).
  */
-export const CARBON_FACTORS = { energia: 0.083, agua: 0.021, outro: 0.045 };
+export const CARBON_FACTORS = { energia: 0.083, agua: 0.021, outro: 0.045 } as const;
 
 export const MESES_SHORT = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
 

@@ -20,7 +20,7 @@ export const LIMITES = {
   senhaMin: 8,
 } as const;
 
-export const CATEGORIAS_REGISTRO = ['energia', 'agua', 'outro'] as const;
+export const CATEGORIAS_REGISTRO = ['energia', 'agua', 'transporte', 'outro'] as const;
 export type CategoriaRegistro = (typeof CATEGORIAS_REGISTRO)[number];
 
 // Anos aceitos: 2000–2099 (mesma faixa do regex em firestore.rules).
@@ -47,7 +47,8 @@ export function validarValor(valor: number): string | null {
 }
 
 /**
- * Quantidade consumida (kWh de energia ou m³ de água). É opcional: vazio/nulo é
+ * Quantidade consumida (kWh de energia, m³ de água, litros de combustível ou
+ * m³ de GNV). É opcional: vazio/nulo é
  * válido. Quando informada precisa ser > 0, até 1.000.000 e com no máximo 2
  * casas decimais.
  */

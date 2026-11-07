@@ -1,12 +1,12 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Wind, Zap, Droplets, Sparkles, Calculator, Loader2, BarChart3 } from 'lucide-react';
+import { Wind, Zap, Droplets, Car, Sparkles, Calculator, Loader2, BarChart3 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { auth, db } from '../../../services/firebase';
 import clsx from 'clsx';
 import type { Registro } from './tipos';
-import { CARBON_FACTORS, FATOR_ENERGIA_KG_POR_KWH } from './dados';
+import { CARBON_FACTORS, FATOR_COMBUSTIVEL, FATOR_ENERGIA_KG_POR_KWH } from './dados';
 import { calcularCarbono, classificarNivel, gerarDicaIA, getMesLabel } from './carbono';
 import { GlassCard } from './componentes';
 
@@ -251,6 +251,15 @@ export function CarbonTab() {
             </GlassCard>
 
             <GlassCard className="p-4 space-y-2">
+              {carbono.registrosNaoCalculados > 0 && (
+                <p className="text-xs text-orange-300">
+                  {carbono.registrosNaoCalculados} registro{carbono.registrosNaoCalculados !== 1 ? 's' : ''} de
+                  transporte ficou{carbono.registrosNaoCalculados !== 1 ? 'ram' : ''} de fora do calculo: so
+                  combustivel com a quantidade informada (litros ou m3) entra no carbono. Onibus, metro,
+                  aplicativo e aviao ainda nao tem fator adotado.
+                </p>
+              )}
+
               {carbono.registrosEstimados > 0 ? (
                 <p className="text-xs text-amber-300">
                   Estimativa: {carbono.registrosEstimados} de {carbono.totalRegistros} registro
@@ -261,7 +270,7 @@ export function CarbonTab() {
                 </p>
               ) : (
                 <p className="text-xs text-emerald-300">
-                  Todos os registros deste mes tem a quantidade em kWh: calculo com o fator oficial.
+                  Nenhum registro deste mes depende de estimativa em reais: os calculos usam a quantidade informada.
                 </p>
               )}
 
@@ -273,6 +282,16 @@ export function CarbonTab() {
                     CO2/kWh. E a media da geracao eletrica do Brasil (SIN) em 2023, divulgada pelo MCTI
                     (38,5 kg CO2/MWh). Em 2025 o MCTI passou a incluir mais usinas solares e eolicas e os
                     valores mensais ficaram menores, entao este fator tende a ser conservador.
+                  </li>
+                  <li>
+                    <strong>Combustivel com quantidade informada:</strong> litros (ou m3, no GNV) x fator por
+                    unidade: gasolina {FATOR_COMBUSTIVEL.Gasolina.kg.toLocaleString('pt-BR', { maximumFractionDigits: 2 })},{' '}
+                    etanol {FATOR_COMBUSTIVEL.Etanol.kg.toLocaleString('pt-BR', { maximumFractionDigits: 3 })},{' '}
+                    diesel {FATOR_COMBUSTIVEL.Diesel.kg.toLocaleString('pt-BR', { maximumFractionDigits: 2 })} kg CO2/L e GNV{' '}
+                    {FATOR_COMBUSTIVEL.GNV.kg.toLocaleString('pt-BR', { maximumFractionDigits: 2 })} kg CO2/m3. Sao calculos
+                    do projeto a partir dos dados de 2025 da EPE/AEA, supondo gasolina com 30% de etanol (E30) e
+                    diesel com 15% de biodiesel (B15). O CO2 do etanol e do biodiesel e considerado biogenico e
+                    nao entra na conta, por isso o etanol fica perto de zero.
                   </li>
                   <li>
                     <strong>Sem quantidade (estimativa):</strong> valor em R$ x fator aproximado (energia{' '}
@@ -291,10 +310,11 @@ export function CarbonTab() {
               </details>
             </GlassCard>
 
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               {[
                 { label: 'Energia', kg: carbono.energiaKg, icon: Zap, cor: 'from-amber-500 to-yellow-500' },
                 { label: 'Agua', kg: carbono.aguaKg, icon: Droplets, cor: 'from-blue-500 to-cyan-500' },
+                { label: 'Transporte', kg: carbono.transporteKg, icon: Car, cor: 'from-orange-500 to-red-500' },
                 { label: 'Outros', kg: carbono.outroKg, icon: Wind, cor: 'from-violet-500 to-indigo-500' },
               ].map((c) => (
                 <motion.div key={c.label} whileHover={{ scale: 1.04 }}>

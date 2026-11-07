@@ -97,12 +97,17 @@ export default function ReportsPage() {
           .filter((r) => r.categoria === 'outro')
           .reduce((s, r) => s + r.valor, 0);
 
+        const t = regs
+          .filter((r) => r.categoria === 'transporte')
+          .reduce((s, r) => s + r.valor, 0);
+
         historico.push({
           mes: mesStr,
           label: getMesLabel(mesStr, true),
-          total: e + a + o,
+          total: e + a + o + t,
           energia: e,
           agua: a,
+          transporte: t,
           outro: o,
           score: calcularScore(e, a, o),
         });
@@ -123,7 +128,12 @@ export default function ReportsPage() {
         .filter((r) => r.categoria === 'outro')
         .reduce((s, r) => s + r.valor, 0);
 
-      const totalGeral = totalEnergia + totalAgua + totalOutro;
+      const totalTransporte = registros
+        .filter((r) => r.categoria === 'transporte')
+        .reduce((s, r) => s + r.valor, 0);
+
+      // O score continua considerando só energia, água e outros (transporte não entra no cálculo).
+      const totalGeral = totalEnergia + totalAgua + totalOutro + totalTransporte;
       const scoreMes = calcularScore(totalEnergia, totalAgua, totalOutro);
 
       const eAnt = regAnt
@@ -189,6 +199,7 @@ export default function ReportsPage() {
         totalGeral,
         totalEnergia,
         totalAgua,
+        totalTransporte,
         totalOutro,
         scoreAnterior,
         scoreMes,
@@ -240,7 +251,8 @@ export default function ReportsPage() {
       `💰 Total gasto: R$ ${reportData.totalGeral.toFixed(2)}\n` +
       `🌱 Score: ${reportData.scoreMes}/100\n` +
       `⚡ Energia: R$ ${reportData.totalEnergia.toFixed(2)}\n` +
-      `💧 Água: R$ ${reportData.totalAgua.toFixed(2)}\n\n` +
+      `💧 Água: R$ ${reportData.totalAgua.toFixed(2)}\n` +
+      `🚗 Transporte: R$ ${reportData.totalTransporte.toFixed(2)}\n\n` +
       `Gerado pelo Sustenta 🍃`
     );
 
@@ -587,6 +599,7 @@ export default function ReportsPage() {
                       <DonutChart
                         energia={reportData.totalEnergia}
                         agua={reportData.totalAgua}
+                        transporte={reportData.totalTransporte}
                         outro={reportData.totalOutro}
                         total={reportData.totalGeral}
                       />
@@ -749,7 +762,7 @@ export default function ReportsPage() {
                       <table className="w-full text-xs">
                         <thead>
                           <tr className={clsx('border-b', darkMode ? 'border-slate-700' : 'border-slate-200')}>
-                            {['Mês', 'Total', 'Energia', 'Água', 'Outros', 'Score'].map((h) => (
+                            {['Mês', 'Total', 'Energia', 'Água', 'Transporte', 'Outros', 'Score'].map((h) => (
                               <th
                                 key={h}
                                 className={clsx(
@@ -792,6 +805,9 @@ export default function ReportsPage() {
                               </td>
                               <td className="py-2 text-right text-blue-400">
                                 R$ {h.agua.toFixed(2)}
+                              </td>
+                              <td className="py-2 text-right text-orange-400">
+                                R$ {h.transporte.toFixed(2)}
                               </td>
                               <td className="py-2 text-right text-violet-400">
                                 R$ {h.outro.toFixed(2)}
@@ -884,7 +900,9 @@ export default function ReportsPage() {
                                         ? 'bg-yellow-500/20 text-yellow-400'
                                         : r.categoria === 'agua'
                                           ? 'bg-blue-500/20 text-blue-400'
-                                          : 'bg-violet-500/20 text-violet-400'
+                                          : r.categoria === 'transporte'
+                                            ? 'bg-orange-500/20 text-orange-400'
+                                            : 'bg-violet-500/20 text-violet-400'
                                     )}
                                   >
                                     {r.categoria}

@@ -1,9 +1,10 @@
 import React from 'react';
-import { Zap, Droplets, Wallet } from 'lucide-react';
+import { Zap, Droplets, Car, Wallet } from 'lucide-react';
 
 interface CategoryChartProps {
   energia: number;
   agua: number;
+  transporte: number;
   outro: number;
   subcategorias: Record<string, number>;
 }
@@ -14,9 +15,9 @@ const CORES_SUB = [
 ];
 
 export const CategoryChart: React.FC<CategoryChartProps> = ({
-  energia, agua, outro, subcategorias,
+  energia, agua, transporte, outro, subcategorias,
 }) => {
-  const total = energia + agua + outro || 1;
+  const total = energia + agua + transporte + outro || 1;
 
   const dadosSubs = Object.entries(subcategorias)
     .map(([name, valor], i) => ({ name, valor, color: CORES_SUB[i % CORES_SUB.length] }))
@@ -29,6 +30,7 @@ export const CategoryChart: React.FC<CategoryChartProps> = ({
         {[
           { icon: Droplets, label: 'Água',    valor: agua,    color: '#0ea5e9', pct: Math.round((agua / total) * 100)    },
           { icon: Zap,      label: 'Energia', valor: energia, color: '#f59e0b', pct: Math.round((energia / total) * 100) },
+          { icon: Car,      label: 'Transporte', valor: transporte, color: '#8b5cf6', pct: Math.round((transporte / total) * 100) },
           { icon: Wallet,   label: 'Outros',  valor: outro,   color: '#10b981', pct: Math.round((outro / total) * 100)   },
         ].filter(d => d.valor > 0).map(({ icon: Icon, label, valor, color, pct }) => (
           <div key={label}>

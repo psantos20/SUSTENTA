@@ -7,7 +7,7 @@ import { LIMITES, validarValor } from './validacao';
  * (usuarios/{uid}.metas) e valem para todos os meses. Sem meta = sem limite.
  */
 
-export const CATEGORIAS_META = ['energia', 'agua', 'outro'] as const;
+export const CATEGORIAS_META = ['energia', 'agua', 'transporte', 'outro'] as const;
 export type CategoriaMeta = (typeof CATEGORIAS_META)[number];
 export type Metas = Partial<Record<CategoriaMeta, number>>;
 

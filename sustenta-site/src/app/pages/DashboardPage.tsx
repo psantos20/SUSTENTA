@@ -1,5 +1,5 @@
 import React from 'react';
-import { Zap, Droplets, Wallet, CheckCircle2, Calendar, AlertCircle, ArrowUpRight, Leaf, Loader2, TrendingUp, PieChart, Lightbulb } from 'lucide-react';
+import { Zap, Droplets, Car, Wallet, CheckCircle2, Calendar, AlertCircle, ArrowUpRight, Leaf, Loader2, TrendingUp, PieChart, Lightbulb } from 'lucide-react';
 import { StatCard } from '../components/dashboard/StatCard';
 import { CategoryChart } from '../components/dashboard/SustainabilityChart';
 import { MetasCard } from '../components/dashboard/MetasCard';
@@ -178,6 +178,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
   const [carregando, setCarregando] = React.useState(true);
   const [energia, setEnergia] = React.useState(0);
   const [agua, setAgua] = React.useState(0);
+  const [transporte, setTransporte] = React.useState(0);
   const [outro, setOutro] = React.useState(0);
   const [totalRegistros, setTotalRegistros] = React.useState(0);
   // Nível/XP é acumulado: conta todos os registros, não só os do mês (igual à Sidebar e ao Perfil).
@@ -190,6 +191,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
       setTotalRegistros(registros.length);
       setEnergia(registros.filter(r => r.categoria === 'energia').reduce((s, r) => s + r.valor, 0));
       setAgua(registros.filter(r => r.categoria === 'agua').reduce((s, r) => s + r.valor, 0));
+      setTransporte(registros.filter(r => r.categoria === 'transporte').reduce((s, r) => s + r.valor, 0));
       setOutro(registros.filter(r => r.categoria === 'outro').reduce((s, r) => s + r.valor, 0));
       const subs: Record<string, number> = {};
       registros.filter(r => r.categoria === 'outro').forEach(r => {
@@ -205,7 +207,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
     buscarTodosRegistros().then(r => setTotalGeral(r.length)).catch(() => {});
   }, []);
 
-  const total = energia + agua + outro;
+  const total = energia + agua + transporte + outro;
   const nivel = calcularNivel(totalGeral);
   const score = Math.min(100, Math.max(0, Math.round(100 - (total / 10))));
   const mesLabel = new Date(mes + '-02').toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
@@ -266,10 +268,11 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
       ) : (
         <>
           {/* Stat Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 md:gap-6">
             <StatCard title="Gasto Total (Mes)" value={total.toFixed(2)}   unit="R$" icon={Wallet}       color="indigo"  delay={0.1} />
             <StatCard title="Energia Eletrica"  value={energia.toFixed(2)} unit="R$" icon={Zap}          color="amber"   delay={0.2} />
             <StatCard title="Consumo de Agua"   value={agua.toFixed(2)}    unit="R$" icon={Droplets}     color="blue"    delay={0.3} />
+            <StatCard title="Transporte"       value={transporte.toFixed(2)} unit="R$" icon={Car}        color="violet"  delay={0.35} />
             <StatCard title="Outros Gastos"     value={outro.toFixed(2)}   unit="R$" icon={CheckCircle2} color="emerald" delay={0.4} />
           </div>
 
@@ -279,7 +282,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
               <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100 mb-6">
                 Distribuicao de Gastos em {mesLabel}
               </h3>
-              <CategoryChart energia={energia} agua={agua} outro={outro} subcategorias={subcategorias} />
+              <CategoryChart energia={energia} agua={agua} transporte={transporte} outro={outro} subcategorias={subcategorias} />
             </div>
 
             {/* Score card */}
@@ -314,7 +317,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
           </div>
 
           {/* Metas mensais por categoria */}
-          <MetasCard gastos={{ energia, agua, outro }} mesLabel={mesLabel} />
+          <MetasCard gastos={{ energia, agua, transporte, outro }} mesLabel={mesLabel} />
 
           {/* Alertas inteligentes */}
           <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm">

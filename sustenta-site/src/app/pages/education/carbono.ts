@@ -1,6 +1,7 @@
 import { chamarFuncaoAutenticada } from '../../../services/api';
 import type { Registro } from './tipos';
-import { CARBON_FACTORS, FATOR_ENERGIA_KG_POR_KWH, MESES_FULL, MESES_SHORT } from './dados';
+import { CARBON_FACTORS, FATOR_COMBUSTIVEL, FATOR_ENERGIA_KG_POR_KWH, MESES_FULL, MESES_SHORT } from './dados';
+import { ehCombustivel } from '../../../services/transporte';
 
 
 export function getMesLabel(m: string, short = false) {
@@ -10,14 +11,26 @@ export function getMesLabel(m: string, short = false) {
 
 
 /**
- * kg de CO2 de um registro. Energia com quantidade (kWh) usa o fator oficial
- * (preciso). Todo o resto é estimado a partir do valor em R$.
+ * kg de CO2 de um registro.
+ *  - preciso: energia com kWh, ou combustível com litros (GNV: m³), usam fator oficial.
+ *  - estimado: energia/água/outros sem quantidade (ou água sempre) usam um fator por R$.
+ *  - não calculado: transporte que não é combustível com quantidade (ônibus,
+ *    app, avião...) ou combustível sem litros — não há fator confiável por R$,
+ *    então fica de fora do total (kg = 0, calculado = false).
  */
-export function carbonoDoRegistro(r: Registro): { kg: number; preciso: boolean } {
-  if (r.categoria === 'energia' && typeof r.quantidade === 'number' && r.quantidade > 0) {
-    return { kg: r.quantidade * FATOR_ENERGIA_KG_POR_KWH, preciso: true };
+export function carbonoDoRegistro(r: Registro): { kg: number; preciso: boolean; calculado: boolean } {
+  const temQuantidade = typeof r.quantidade === 'number' && r.quantidade > 0;
+
+  if (r.categoria === 'transporte') {
+    if (temQuantidade && ehCombustivel(r.subcategoria)) {
+      return { kg: r.quantidade! * FATOR_COMBUSTIVEL[r.subcategoria].kg, preciso: true, calculado: true };
+    }
+    return { kg: 0, preciso: false, calculado: false };
   }
-  return { kg: r.valor * CARBON_FACTORS[r.categoria], preciso: false };
+  if (r.categoria === 'energia' && temQuantidade) {
+    return { kg: r.quantidade! * FATOR_ENERGIA_KG_POR_KWH, preciso: true, calculado: true };
+  }
+  return { kg: r.valor * CARBON_FACTORS[r.categoria], preciso: false, calculado: true };
 }
 
 export function calcularCarbono(registros: Registro[]) {
@@ -26,23 +39,26 @@ export function calcularCarbono(registros: Registro[]) {
 
   const energiaKg = somar('energia');
   const aguaKg = somar('agua');
+  const transporteKg = somar('transporte');
   const outroKg = somar('outro');
-  const totalKg = energiaKg + aguaKg + outroKg;
+  const totalKg = energiaKg + aguaKg + transporteKg + outroKg;
 
   // Quanto do total vem de estimativas (sem quantidade informada / sem fator oficial).
-  const estimadoKg = registros.reduce((s, r) => {
-    const c = carbonoDoRegistro(r);
-    return c.preciso ? s : s + c.kg;
-  }, 0);
-  const registrosEstimados = registros.filter((r) => !carbonoDoRegistro(r).preciso).length;
+  const calculos = registros.map((r) => carbonoDoRegistro(r));
+  const estimadoKg = calculos.reduce((s, c) => (c.calculado && !c.preciso ? s + c.kg : s), 0);
+  const registrosEstimados = calculos.filter((c) => c.calculado && !c.preciso).length;
+  // Transporte que ficou de fora do cálculo por não ter fator confiável.
+  const registrosNaoCalculados = calculos.filter((c) => !c.calculado).length;
 
   return {
     totalKg,
     energiaKg,
     aguaKg,
+    transporteKg,
     outroKg,
     estimadoKg,
     registrosEstimados,
+    registrosNaoCalculados,
     totalRegistros: registros.length,
     arvoresTotais: Math.ceil(totalKg / 21.7),
     kmCarro: Math.round(totalKg / 0.21),

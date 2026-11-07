@@ -113,7 +113,9 @@ describe('usuarios', () => {
     await assertFails(updateDoc(ref, { metas: { energia: -5 } }));
     await assertFails(updateDoc(ref, { metas: { energia: 1000001 } }));
     await assertFails(updateDoc(ref, { metas: { energia: '200' } }));
-    await assertFails(updateDoc(ref, { metas: { transporte: 100 } }));
+    await assertSucceeds(updateDoc(ref, { metas: { transporte: 100 } }));
+    await assertFails(updateDoc(ref, { metas: { transporte: 0 } }));
+    await assertFails(updateDoc(ref, { metas: { hack: 100 } }));
     await assertFails(updateDoc(ref, { metas: 'x' }));
   });
 
@@ -151,7 +153,13 @@ describe('registros', () => {
     await assertSucceeds(setDoc(doc(db(ALICE), 'registros', 'r10'), registro(ALICE, { valor: 0.01 })));
   });
 
-  it('quantidade (kWh/m³) é opcional, positiva e só para energia/água', async () => {
+  it('transporte: aceita subcategoria e quantidade em litros/m³', async () => {
+    await assertSucceeds(setDoc(doc(db(ALICE), 'registros', 't1'), registro(ALICE, { categoria: 'transporte', subcategoria: 'Gasolina', quantidade: 40 })));
+    await assertSucceeds(setDoc(doc(db(ALICE), 'registros', 't2'), registro(ALICE, { categoria: 'transporte', subcategoria: 'Ônibus' })));
+    await assertFails(setDoc(doc(db(ALICE), 'registros', 't3'), registro(ALICE, { categoria: 'transporte', quantidade: -1 })));
+  });
+
+  it('quantidade (kWh/m³) é opcional, positiva e só para energia/água/transporte', async () => {
     await assertSucceeds(setDoc(doc(db(ALICE), 'registros', 'q1'), registro(ALICE, { quantidade: 150 })));
     await assertSucceeds(setDoc(doc(db(ALICE), 'registros', 'q2'), registro(ALICE, { categoria: 'agua', quantidade: 12.5 })));
     await assertSucceeds(setDoc(doc(db(ALICE), 'registros', 'q3'), registro(ALICE, { quantidade: null })));

@@ -1,6 +1,6 @@
 import React from 'react';
 import {
-  TrendingUp, TrendingDown, Zap, Droplets, Wallet,
+  TrendingUp, TrendingDown, Zap, Droplets, Car, Wallet,
   BarChart3, MapPin, Loader2, AlertCircle,
   ArrowUpRight, ArrowDownRight, Minus, Info,
   Lightbulb, Star, ThumbsDown
@@ -187,9 +187,9 @@ export const AnalysisPage: React.FC = () => {
 
   // ── Agrupa por mês ──────────────────────────────────────────────────────────
   const porMes = React.useMemo(() => {
-    const map: Record<string, { energia: number; agua: number; outro: number; total: number }> = {};
+    const map: Record<string, { energia: number; agua: number; transporte: number; outro: number; total: number }> = {};
     registrosFiltrados.forEach(r => {
-      if (!map[r.mes]) map[r.mes] = { energia: 0, agua: 0, outro: 0, total: 0 };
+      if (!map[r.mes]) map[r.mes] = { energia: 0, agua: 0, transporte: 0, outro: 0, total: 0 };
       map[r.mes][r.categoria] += r.valor;
       map[r.mes].total += r.valor;
     });
@@ -202,6 +202,7 @@ export const AnalysisPage: React.FC = () => {
   const totalGeral   = registrosFiltrados.reduce((s, r) => s + r.valor, 0);
   const totalEnergia = registrosFiltrados.filter(r => r.categoria === 'energia').reduce((s, r) => s + r.valor, 0);
   const totalAgua    = registrosFiltrados.filter(r => r.categoria === 'agua').reduce((s, r) => s + r.valor, 0);
+  const totalTransporte = registrosFiltrados.filter(r => r.categoria === 'transporte').reduce((s, r) => s + r.valor, 0);
   const totalOutro   = registrosFiltrados.filter(r => r.categoria === 'outro').reduce((s, r) => s + r.valor, 0);
   const mediaMensal  = porMes.length > 0 ? totalGeral / porMes.length : 0;
 
@@ -215,12 +216,13 @@ export const AnalysisPage: React.FC = () => {
   const piorMes   = porMes.length > 0 ? porMes.reduce((m, c) => c.total > m.total ? c : m) : null;
 
   // ── Previsão ─────────────────────────────────────────────────────────────────
-  const previsoesProxMes = {
+  const previsoesProxMes = React.useMemo(() => ({
     energia: preverProximoMes(porMes.map(m => m.energia)),
     agua:    preverProximoMes(porMes.map(m => m.agua)),
+    transporte: preverProximoMes(porMes.map(m => m.transporte)),
     outro:   preverProximoMes(porMes.map(m => m.outro)),
-  };
-  const previsaoTotal = previsoesProxMes.energia + previsoesProxMes.agua + previsoesProxMes.outro;
+  }), [porMes]);
+  const previsaoTotal = previsoesProxMes.energia + previsoesProxMes.agua + previsoesProxMes.transporte + previsoesProxMes.outro;
 
   const dadosLinha = React.useMemo(() => {
     if (porMes.length === 0) return [];
@@ -257,11 +259,12 @@ export const AnalysisPage: React.FC = () => {
   const CORES_SUBS = ['#10b981','#8b5cf6','#f59e0b','#ef4444','#3b82f6','#ec4899','#14b8a6','#f97316'];
 
   // ── Pizza ────────────────────────────────────────────────────────────────────
-  const dadosPizza = [
+  const dadosPizza = React.useMemo(() => [
     { name: 'Energia', value: totalEnergia, color: '#f59e0b', pct: totalGeral > 0 ? Math.round((totalEnergia / totalGeral) * 100) : 0 },
     { name: 'Água',    value: totalAgua,    color: '#0ea5e9', pct: totalGeral > 0 ? Math.round((totalAgua    / totalGeral) * 100) : 0 },
+    { name: 'Transporte', value: totalTransporte, color: '#8b5cf6', pct: totalGeral > 0 ? Math.round((totalTransporte / totalGeral) * 100) : 0 },
     { name: 'Outros',  value: totalOutro,   color: '#10b981', pct: totalGeral > 0 ? Math.round((totalOutro   / totalGeral) * 100) : 0 },
-  ].filter(d => d.value > 0);
+  ].filter(d => d.value > 0), [totalEnergia, totalAgua, totalTransporte, totalOutro, totalGeral]);
 
   // ── Insights ─────────────────────────────────────────────────────────────────
   const insights = React.useMemo(() => gerarInsights({
@@ -316,12 +319,13 @@ export const AnalysisPage: React.FC = () => {
       </motion.div>
 
       {/* Cards de resumo */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
         {[
           { label: 'Total Acumulado', value: totalGeral,   icon: Wallet,   color: 'indigo'  },
           { label: 'Média Mensal',    value: mediaMensal,  icon: BarChart3, color: 'emerald' },
           { label: 'Energia Total',   value: totalEnergia, icon: Zap,      color: 'amber'   },
           { label: 'Água Total',      value: totalAgua,    icon: Droplets, color: 'blue'    },
+          { label: 'Transporte Total', value: totalTransporte, icon: Car,   color: 'violet'  },
         ].map(({ label, value, icon: Icon, color }, i) => (
           <motion.div key={label}
             initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
@@ -332,12 +336,14 @@ export const AnalysisPage: React.FC = () => {
               ${color === 'emerald' ? 'bg-emerald-50 dark:bg-emerald-900/20' : ''}
               ${color === 'amber'   ? 'bg-amber-50 dark:bg-amber-900/20'     : ''}
               ${color === 'blue'    ? 'bg-blue-50 dark:bg-blue-900/20'       : ''}
+              ${color === 'violet'  ? 'bg-violet-50 dark:bg-violet-900/20'   : ''}
             `}>
               <Icon className={`w-5 h-5
                 ${color === 'indigo'  ? 'text-indigo-600 dark:text-indigo-400'   : ''}
                 ${color === 'emerald' ? 'text-emerald-600 dark:text-emerald-400' : ''}
                 ${color === 'amber'   ? 'text-amber-600 dark:text-amber-400'     : ''}
                 ${color === 'blue'    ? 'text-blue-600 dark:text-blue-400'       : ''}
+                ${color === 'violet'  ? 'text-violet-600 dark:text-violet-400'   : ''}
               `} />
             </div>
             <p className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1">{label}</p>
@@ -432,6 +438,8 @@ export const AnalysisPage: React.FC = () => {
                 dot={{ r: 3, fill: '#f59e0b' }} activeDot={{ r: 5 }} />
               <Line type="monotone" dataKey="agua" name="Água" stroke="#0ea5e9" strokeWidth={2.5}
                 dot={{ r: 3, fill: '#0ea5e9' }} activeDot={{ r: 5 }} />
+              <Line type="monotone" dataKey="transporte" name="Transporte" stroke="#8b5cf6" strokeWidth={2.5}
+                dot={{ r: 3, fill: '#8b5cf6' }} activeDot={{ r: 5 }} />
               <Line type="monotone" dataKey="outro" name="Outros" stroke="#10b981" strokeWidth={2.5}
                 dot={{ r: 3, fill: '#10b981' }} activeDot={{ r: 5 }} />
               <Line type="monotone" dataKey="total" name="Total" stroke="#8b5cf6" strokeWidth={2.5}
@@ -454,6 +462,7 @@ export const AnalysisPage: React.FC = () => {
               <BarChart data={[
                 { name: 'Energia', valor: totalEnergia, color: '#f59e0b' },
                 { name: 'Água',    valor: totalAgua,    color: '#0ea5e9' },
+                { name: 'Transporte', valor: totalTransporte, color: '#8b5cf6' },
                 { name: 'Outros',  valor: totalOutro,   color: '#10b981' },
               ]} margin={{ left: 0, right: 8 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={gridColor} />
@@ -462,7 +471,7 @@ export const AnalysisPage: React.FC = () => {
                   tickFormatter={v => `R$${v}`} />
                 <Tooltip content={<CustomTooltip />} />
                 <Bar dataKey="valor" name="Total" radius={[8, 8, 0, 0]} barSize={48}>
-                  {[{ color: '#f59e0b' }, { color: '#0ea5e9' }, { color: '#10b981' }].map((e, i) => (
+                  {[{ color: '#f59e0b' }, { color: '#0ea5e9' }, { color: '#8b5cf6' }, { color: '#10b981' }].map((e, i) => (
                     <Cell key={i} fill={e.color} />
                   ))}
                 </Bar>
@@ -473,6 +482,7 @@ export const AnalysisPage: React.FC = () => {
             {[
               { label: 'Energia', valor: totalEnergia, color: '#f59e0b' },
               { label: 'Água',    valor: totalAgua,    color: '#0ea5e9' },
+              { label: 'Transporte', valor: totalTransporte, color: '#8b5cf6' },
               { label: 'Outros',  valor: totalOutro,   color: '#10b981' },
             ].map(({ label, valor, color }) => (
               <div key={label} className="flex items-center gap-3">
@@ -678,11 +688,12 @@ export const AnalysisPage: React.FC = () => {
               <TrendingUp className="w-5 h-5 text-emerald-400" />
             </div>
           </div>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
             {[
               { label: 'Total Previsto', value: previsaoTotal,             color: 'text-white',       big: true  },
               { label: 'Energia',        value: previsoesProxMes.energia,  color: 'text-amber-300',   big: false },
               { label: 'Água',           value: previsoesProxMes.agua,     color: 'text-sky-300',     big: false },
+              { label: 'Transporte',     value: previsoesProxMes.transporte, color: 'text-violet-300', big: false },
               { label: 'Outros',         value: previsoesProxMes.outro,    color: 'text-emerald-300', big: false },
             ].map(({ label, value, color, big }) => (
               <div key={label} className="bg-emerald-800/50 border border-emerald-700/50 rounded-xl p-4">

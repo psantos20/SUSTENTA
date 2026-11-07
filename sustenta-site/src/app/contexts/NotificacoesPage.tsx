@@ -70,6 +70,7 @@ async function gerarNotificacoes(): Promise<Omit<Notificacao, 'lida'>[]> {
 
   const energia = registros.filter(r => r.categoria === 'energia').reduce((s, r) => s + r.valor, 0);
   const agua    = registros.filter(r => r.categoria === 'agua').reduce((s, r) => s + r.valor, 0);
+  const transporte = registros.filter(r => r.categoria === 'transporte').reduce((s, r) => s + r.valor, 0);
   const subs: Record<string, number> = {};
   registros.filter(r => r.categoria === 'outro').forEach(r => {
     const nome = r.subcategoria || 'Outro';
@@ -97,6 +98,17 @@ async function gerarNotificacoes(): Promise<Omit<Notificacao, 'lida'>[]> {
       mensagem: `Seu gasto com água em ${mesAtual} é R$ ${agua.toFixed(2)}, acima do limite de R$ 100. Verifique possíveis vazamentos.`,
       criadaEm: new Date(agora.getTime() - 1000 * 60 * 45),
       icone: '💧',
+    });
+  }
+
+  if (transporte > 300) {
+    notifs.push({
+      id: `alerta_transporte_${mesAtual}`,
+      tipo: 'alerta_gasto',
+      titulo: 'Transporte acima do limite',
+      mensagem: `Seu gasto com transporte em ${mesAtual} é R$ ${transporte.toFixed(2)}, acima do limite de R$ 300. Avalie caronas, transporte público ou bicicleta.`,
+      criadaEm: new Date(agora.getTime() - 1000 * 60 * 50),
+      icone: '🚗',
     });
   }
 

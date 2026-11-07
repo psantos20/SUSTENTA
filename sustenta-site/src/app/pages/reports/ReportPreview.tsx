@@ -86,6 +86,7 @@ export function ReportPreview({ data }: { data: ReportData }) {
           <DonutChart
             energia={data.totalEnergia}
             agua={data.totalAgua}
+            transporte={data.totalTransporte}
             outro={data.totalOutro}
             total={data.totalGeral}
           />

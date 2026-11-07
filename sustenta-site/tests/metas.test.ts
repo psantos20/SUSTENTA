@@ -61,7 +61,11 @@ describe('Meta: validação do campo', () => {
 
 describe('Meta: normalização do que vem do banco', () => {
   it('mantém só categorias conhecidas com número válido', () => {
-    expect(normalizarMetas({ energia: 200, agua: 80.5, outro: 0, hack: 1 })).toEqual({ energia: 200, agua: 80.5 });
+    expect(normalizarMetas({ energia: 200, agua: 80.5, transporte: 150, outro: 0, hack: 1 })).toEqual({
+      energia: 200,
+      agua: 80.5,
+      transporte: 150,
+    });
   });
   it('lixo vira objeto vazio', () => {
     expect(normalizarMetas(null)).toEqual({});

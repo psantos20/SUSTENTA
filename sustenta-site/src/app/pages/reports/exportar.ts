@@ -1,14 +1,17 @@
 import type { ReportData } from './tipos';
+import { unidadeDeQuantidade } from '../../../services/transporte';
 
 
 export function exportarCSV(data: ReportData) {
-  const header = 'Descrição,Categoria,Subcategoria,Valor (R$),Mês\n';
+  const header = 'Descrição,Categoria,Subcategoria,Quantidade,Valor (R$),Mês\n';
 
-  const rows = data.registros.map((r) =>
-    `"${r.descricao || ''}","${r.categoria}","${r.subcategoria || ''}","${r.valor.toFixed(2)}","${data.mesLabel}"`
-  ).join('\n');
+  const rows = data.registros.map((r) => {
+    const unidade = unidadeDeQuantidade(r.categoria, r.subcategoria);
+    const quantidade = r.quantidade != null && unidade ? `${r.quantidade} ${unidade}` : '';
+    return `"${r.descricao || ''}","${r.categoria}","${r.subcategoria || ''}","${quantidade}","${r.valor.toFixed(2)}","${data.mesLabel}"`;
+  }).join('\n');
 
-  const rodape = `\n"TOTAL","","","${data.totalGeral.toFixed(2)}",""\n`;
+  const rodape = `\n"TOTAL","","","","${data.totalGeral.toFixed(2)}",""\n`;
   const csv = '\uFEFF' + header + rows + rodape;
 
   const blob = new Blob([csv], {
@@ -131,10 +134,10 @@ export async function gerarPDF(_elementId: string, mes: string, data?: ReportDat
 
   y += 36;
 
-  novaPaginaSePreciso(42);
+  novaPaginaSePreciso(51);
 
   pdf.setFillColor(15, 23, 42);
-  pdf.roundedRect(margem, y, largura, 38, 3, 3, 'F');
+  pdf.roundedRect(margem, y, largura, 47, 3, 3, 'F');
 
   pdf.setTextColor(148, 163, 184);
   texto('Resumo do mês', margem + 5, y + 8, 10, true);
@@ -142,6 +145,7 @@ export async function gerarPDF(_elementId: string, mes: string, data?: ReportDat
   pdf.setTextColor(255, 255, 255);
   texto(`Energia: ${moeda(data.totalEnergia)}`, margem + 5, y + 18, 10);
   texto(`Água: ${moeda(data.totalAgua)}`, margem + 5, y + 27, 10);
+  texto(`Transporte: ${moeda(data.totalTransporte)}`, margem + 5, y + 36, 10);
   texto(`Outros: ${moeda(data.totalOutro)}`, margem + 85, y + 18, 10);
 
   const tendencia = data.scoreMes - data.scoreAnterior;
@@ -152,7 +156,7 @@ export async function gerarPDF(_elementId: string, mes: string, data?: ReportDat
 
   texto(`Tendência: ${tendenciaTxt}`, margem + 85, y + 27, 10);
 
-  y += 50;
+  y += 59;
 
   if (data.historico.length > 0) {
     tituloSecao('Evolução dos Gastos');
