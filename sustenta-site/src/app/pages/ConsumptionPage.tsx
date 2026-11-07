@@ -4,7 +4,7 @@ import { Zap, Droplets, Wallet, Plus, CheckCircle2, Loader2, Trash2, Pencil, X, 
 import { db, auth } from '../../services/firebase';
 import { useFeedback } from '../contexts/FeedbackContext';
 import { collection, addDoc, serverTimestamp, query, where, getDocs, deleteDoc, doc, updateDoc } from 'firebase/firestore';
-import { LIMITES, limparTexto, validarMes, validarValor } from '../../services/validacao';
+import { LIMITES, limparTexto, validarMes, validarQuantidade, validarValor } from '../../services/validacao';
 
 const outrasOpcoes = [
   'Gás', 'Internet', 'Transporte', 'Alimentação', 'Saúde', 'Educação', 'Lazer', 'Vestuário', 'Moradia', 'Outro'
@@ -15,6 +15,7 @@ interface Registro {
   categoria: string;
   subcategoria?: string;
   valor: number;
+  quantidade?: number | null;
   mes: string;
   descricao: string;
 }
@@ -33,6 +34,7 @@ export const ConsumptionPage: React.FC = () => {
   const [subcategoria, setSubcategoria]         = React.useState('');
   const [subcategoriaCustom, setSubcategoriaCustom] = React.useState('');
   const [valor, setValor]                       = React.useState('');
+  const [quantidade, setQuantidade]             = React.useState('');
   const [descricao, setDescricao]               = React.useState('');
   const [mes, setMes]                           = React.useState(mesAtual);
   const [salvando, setSalvando]                 = React.useState(false);
@@ -43,6 +45,7 @@ export const ConsumptionPage: React.FC = () => {
   const [carregando, setCarregando]             = React.useState(true);
   const [editandoId, setEditandoId]             = React.useState<string | null>(null);
   const [editValor, setEditValor]               = React.useState('');
+  const [editQuantidade, setEditQuantidade]     = React.useState('');
   const [editDescricao, setEditDescricao]       = React.useState('');
 
   const carregarRegistros = async () => {
@@ -59,6 +62,10 @@ export const ConsumptionPage: React.FC = () => {
 
   React.useEffect(() => { carregarRegistros(); }, []);
 
+  // kWh para energia, m³ para água. "Outros" não tem quantidade.
+  const UNIDADE: Record<string, string> = { energia: 'kWh', agua: 'm³' };
+  const lerQuantidade = (texto: string) => (texto.trim() === '' ? null : parseFloat(texto));
+
   const categoriaLabel = () => {
     if (categoria === 'energia') return 'Energia Elétrica';
     if (categoria === 'agua') return 'Água';
@@ -72,6 +79,9 @@ export const ConsumptionPage: React.FC = () => {
     if (erroValor)                                               { setErro(erroValor); return; }
     const erroMes = validarMes(mes);
     if (erroMes)                                                 { setErro(erroMes); return; }
+    const quantidadeNum = categoria === 'outro' ? null : lerQuantidade(quantidade);
+    const erroQuantidade = validarQuantidade(quantidadeNum);
+    if (erroQuantidade)                                          { setErro(erroQuantidade); return; }
     if (categoria === 'outro' && !subcategoria)                  { setErro('Selecione uma subcategoria.'); return; }
     if (categoria === 'outro' && subcategoria === 'Outro' && !subcategoriaCustom.trim()) { setErro('Digite o nome da categoria.'); return; }
     setSalvando(true); setErro('');
@@ -85,12 +95,13 @@ export const ConsumptionPage: React.FC = () => {
           ? limparTexto(subcategoria === 'Outro' ? subcategoriaCustom : subcategoria, LIMITES.subcategoria)
           : null,
         valor: parseFloat(valor),
+        ...(quantidadeNum !== null ? { quantidade: quantidadeNum } : {}),
         descricao: limparTexto(descricao, LIMITES.descricao),
         mes,
         criadoEm: serverTimestamp(),
       });
       setSucesso(true);
-      setValor(''); setDescricao(''); setSubcategoria(''); setSubcategoriaCustom('');
+      setValor(''); setQuantidade(''); setDescricao(''); setSubcategoria(''); setSubcategoriaCustom('');
       setTimeout(() => setSucesso(false), 3000);
       carregarRegistros();
     } catch { setErro('Erro ao salvar. Tente novamente.'); }
@@ -107,16 +118,22 @@ export const ConsumptionPage: React.FC = () => {
     setErroEdicao('');
     setEditandoId(r.id);
     setEditValor(String(r.valor));
+    setEditQuantidade(r.quantidade != null ? String(r.quantidade) : '');
     setEditDescricao(r.descricao);
   };
 
-  const handleSaveEdit = async (id: string) => {
+  const handleSaveEdit = async (r: Registro) => {
+    const id = r.id;
     const novoValor = parseFloat(editValor);
     const erroValor = validarValor(novoValor);
     if (erroValor) { setErroEdicao(erroValor); return; }
+    const novaQuantidade = r.categoria === 'outro' ? null : lerQuantidade(editQuantidade);
+    const erroQuantidade = validarQuantidade(novaQuantidade);
+    if (erroQuantidade) { setErroEdicao(erroQuantidade); return; }
     try {
       await updateDoc(doc(db, 'registros', id), {
         valor: novoValor,
+        ...(r.categoria !== 'outro' ? { quantidade: novaQuantidade } : {}),
         descricao: limparTexto(editDescricao, LIMITES.descricao),
       });
     } catch {
@@ -213,6 +230,24 @@ export const ConsumptionPage: React.FC = () => {
             </div>
           </div>
 
+          {/* Quantidade (opcional): deixa a pegada de carbono mais precisa */}
+          {categoria !== 'outro' && (
+            <div>
+              <label className="text-sm font-medium text-slate-700 dark:text-slate-300 block mb-2">
+                Quantidade consumida ({UNIDADE[categoria]}) <span className="text-slate-400 font-normal">— opcional</span>
+              </label>
+              <div className="relative">
+                <span className="absolute inset-y-0 left-4 flex items-center text-slate-400 font-bold">{UNIDADE[categoria]}</span>
+                <input type="number" min="0.01" max={LIMITES.quantidadeMax} step="0.01" value={quantidade} onChange={e => setQuantidade(e.target.value)}
+                  className="w-full pl-16 pr-4 py-3 border border-slate-200 dark:border-slate-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 text-slate-900 dark:text-slate-100 font-bold bg-white dark:bg-slate-700"
+                  placeholder={categoria === 'energia' ? 'Ex.: 150 (está na sua conta de luz)' : 'Ex.: 12 (está na sua conta de água)'} />
+              </div>
+              <p className="text-xs text-slate-400 dark:text-slate-500 mt-1.5">
+                Com a quantidade, a pegada de carbono usa o fator oficial em vez de uma estimativa pelo valor em reais.
+              </p>
+            </div>
+          )}
+
           {/* Mês */}
           <div>
             <label className="text-sm font-medium text-slate-700 dark:text-slate-300 block mb-2">Mês de referência</label>
@@ -286,6 +321,11 @@ export const ConsumptionPage: React.FC = () => {
                       <div className="flex gap-2 flex-wrap">
                         <input type="number" min="0.01" max={LIMITES.valorMax} step="0.01" value={editValor} onChange={e => { setEditValor(e.target.value); setErroEdicao(''); }}
                           className="border border-slate-200 dark:border-slate-600 rounded-lg px-2 py-1 text-sm w-24 focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100" />
+                        {r.categoria !== 'outro' && (
+                          <input type="number" min="0.01" max={LIMITES.quantidadeMax} step="0.01" value={editQuantidade} onChange={e => { setEditQuantidade(e.target.value); setErroEdicao(''); }}
+                            aria-label={`Quantidade em ${UNIDADE[r.categoria]}`} placeholder={UNIDADE[r.categoria]}
+                            className="border border-slate-200 dark:border-slate-600 rounded-lg px-2 py-1 text-sm w-24 focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100" />
+                        )}
                         <input type="text" maxLength={LIMITES.descricao} value={editDescricao} onChange={e => setEditDescricao(e.target.value)}
                           className="border border-slate-200 dark:border-slate-600 rounded-lg px-2 py-1 text-sm flex-1 focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100" placeholder="Descrição" />
                         {erroEdicao && (
@@ -296,6 +336,9 @@ export const ConsumptionPage: React.FC = () => {
                       <>
                         <p className="text-sm font-bold text-slate-800 dark:text-slate-200">
                           {registroLabel(r)} — <span className="text-emerald-600 dark:text-emerald-400">R$ {r.valor.toFixed(2)}</span>
+                          {r.quantidade != null && UNIDADE[r.categoria] && (
+                            <span className="text-slate-500 dark:text-slate-400 font-medium"> • {r.quantidade.toLocaleString('pt-BR')} {UNIDADE[r.categoria]}</span>
+                          )}
                         </p>
                         <p className="text-xs text-slate-400 dark:text-slate-500">
                           {mesLabel(r.mes)}{r.descricao ? ` • ${r.descricao}` : ''}
@@ -306,7 +349,7 @@ export const ConsumptionPage: React.FC = () => {
                   <div className="flex items-center gap-2">
                     {isEditando ? (
                       <>
-                        <button onClick={() => handleSaveEdit(r.id)} className="p-2 text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 rounded-lg"><Check className="w-4 h-4" /></button>
+                        <button onClick={() => handleSaveEdit(r)} className="p-2 text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 rounded-lg"><Check className="w-4 h-4" /></button>
                         <button onClick={() => { setEditandoId(null); setErroEdicao(''); }} className="p-2 text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-lg"><X className="w-4 h-4" /></button>
                       </>
                     ) : (

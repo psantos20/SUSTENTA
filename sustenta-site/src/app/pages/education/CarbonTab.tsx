@@ -6,7 +6,7 @@ import { collection, query, where, getDocs } from 'firebase/firestore';
 import { auth, db } from '../../../services/firebase';
 import clsx from 'clsx';
 import type { Registro } from './tipos';
-import { CARBON_FACTORS } from './dados';
+import { CARBON_FACTORS, FATOR_ENERGIA_KG_POR_KWH } from './dados';
 import { calcularCarbono, gerarDicaIA, getMesLabel } from './carbono';
 import { GlassCard } from './componentes';
 
@@ -65,7 +65,7 @@ export function CarbonTab() {
           );
 
           const rs = s.docs.map((d) => d.data() as Registro);
-          const kg = rs.reduce((acc, r) => acc + r.valor * CARBON_FACTORS[r.categoria], 0);
+          const kg = calcularCarbono(rs).totalKg;
 
           return {
             label: getMesLabel(m, true),
@@ -219,10 +219,52 @@ export function CarbonTab() {
                   </div>
 
                   <p className="text-xs text-slate-500 mt-1.5">
-                    Meta sustentavel: menos de 167 kg CO2/mes (2t/ano)
+                    Referencia: 167 kg CO2/mes (2 t/ano) e o orcamento de uma pessoa somando TODAS as
+                    atividades (transporte, alimentacao etc.). Aqui contamos so o que voce registrou.
                   </p>
                 </>
               )}
+            </GlassCard>
+
+            <GlassCard className="p-4 space-y-2">
+              {carbono.registrosEstimados > 0 ? (
+                <p className="text-xs text-amber-300">
+                  Estimativa: {carbono.registrosEstimados} de {carbono.totalRegistros} registro
+                  {carbono.totalRegistros !== 1 ? 's' : ''} neste mes usa{carbono.registrosEstimados !== 1 ? 'm' : ''} o
+                  valor em reais para estimar o carbono ({carbono.estimadoKg.toFixed(1)} kg dos{' '}
+                  {carbono.totalKg.toFixed(1)} kg). Informe os kWh da conta de luz em Consumo para um
+                  calculo mais preciso.
+                </p>
+              ) : (
+                <p className="text-xs text-emerald-300">
+                  Todos os registros deste mes tem a quantidade em kWh: calculo com o fator oficial.
+                </p>
+              )}
+
+              <details className="text-xs text-slate-400">
+                <summary className="cursor-pointer text-slate-300 font-medium">Como calculamos</summary>
+                <ul className="list-disc pl-5 mt-2 space-y-1.5">
+                  <li>
+                    <strong>Energia com kWh informado:</strong> kWh x {FATOR_ENERGIA_KG_POR_KWH.toLocaleString('pt-BR')} kg
+                    CO2/kWh. E a media da geracao eletrica do Brasil (SIN) em 2023, divulgada pelo MCTI
+                    (38,5 kg CO2/MWh). Em 2025 o MCTI passou a incluir mais usinas solares e eolicas e os
+                    valores mensais ficaram menores, entao este fator tende a ser conservador.
+                  </li>
+                  <li>
+                    <strong>Sem quantidade (estimativa):</strong> valor em R$ x fator aproximado (energia{' '}
+                    {CARBON_FACTORS.energia.toLocaleString('pt-BR')}, agua {CARBON_FACTORS.agua.toLocaleString('pt-BR')},
+                    outros {CARBON_FACTORS.outro.toLocaleString('pt-BR')} kg CO2 por real). Sao valores
+                    de referencia do projeto, sem fonte oficial: a tarifa muda de cidade para cidade.
+                  </li>
+                  <li>
+                    <strong>Agua e outros gastos:</strong> sempre estimados por enquanto (ainda nao ha fator
+                    oficial adotado para m3 de agua).
+                  </li>
+                  <li>
+                    <strong>Equivalencias</strong> (arvores, km de carro, voo) sao aproximacoes ilustrativas.
+                  </li>
+                </ul>
+              </details>
             </GlassCard>
 
             <div className="grid grid-cols-3 gap-3">

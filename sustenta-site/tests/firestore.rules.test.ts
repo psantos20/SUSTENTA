@@ -151,6 +151,17 @@ describe('registros', () => {
     await assertSucceeds(setDoc(doc(db(ALICE), 'registros', 'r10'), registro(ALICE, { valor: 0.01 })));
   });
 
+  it('quantidade (kWh/m³) é opcional, positiva e só para energia/água', async () => {
+    await assertSucceeds(setDoc(doc(db(ALICE), 'registros', 'q1'), registro(ALICE, { quantidade: 150 })));
+    await assertSucceeds(setDoc(doc(db(ALICE), 'registros', 'q2'), registro(ALICE, { categoria: 'agua', quantidade: 12.5 })));
+    await assertSucceeds(setDoc(doc(db(ALICE), 'registros', 'q3'), registro(ALICE, { quantidade: null })));
+    await assertFails(setDoc(doc(db(ALICE), 'registros', 'q4'), registro(ALICE, { quantidade: 0 })));
+    await assertFails(setDoc(doc(db(ALICE), 'registros', 'q5'), registro(ALICE, { quantidade: -3 })));
+    await assertFails(setDoc(doc(db(ALICE), 'registros', 'q6'), registro(ALICE, { quantidade: 1000001 })));
+    await assertFails(setDoc(doc(db(ALICE), 'registros', 'q7'), registro(ALICE, { quantidade: '150' })));
+    await assertFails(setDoc(doc(db(ALICE), 'registros', 'q8'), registro(ALICE, { categoria: 'outro', quantidade: 10 })));
+  });
+
   it('só o dono lista, edita e apaga', async () => {
     await seed(async (d) => { await setDoc(doc(d, 'registros', 'r1'), { ...registro(ALICE), criadoEm: Timestamp.now() }); });
     await assertSucceeds(getDocs(query(collection(db(ALICE), 'registros'), where('uid', '==', ALICE))));
@@ -159,6 +170,8 @@ describe('registros', () => {
     await assertFails(updateDoc(doc(db(EVE), 'registros', 'r1'), { valor: 1 }));
     await assertFails(updateDoc(doc(db(ALICE), 'registros', 'r1'), { uid: EVE }));
     await assertSucceeds(updateDoc(doc(db(ALICE), 'registros', 'r1'), { valor: 99, descricao: 'ok' }));
+    await assertSucceeds(updateDoc(doc(db(ALICE), 'registros', 'r1'), { quantidade: 180 }));
+    await assertFails(updateDoc(doc(db(ALICE), 'registros', 'r1'), { quantidade: -1 }));
     await assertFails(deleteDoc(doc(db(EVE), 'registros', 'r1')));
     await assertSucceeds(deleteDoc(doc(db(ALICE), 'registros', 'r1')));
   });

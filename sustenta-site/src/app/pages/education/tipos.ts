@@ -2,6 +2,8 @@
 export interface Registro {
   categoria: 'energia' | 'agua' | 'outro';
   valor: number;
+  /** kWh (energia) ou m³ (água), quando o usuário informou. */
+  quantidade?: number | null;
   mes: string;
 }
 

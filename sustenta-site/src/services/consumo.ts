@@ -6,6 +6,8 @@ export interface Registro {
   categoria: 'energia' | 'agua' | 'outro';
   subcategoria?: string;
   valor: number;
+  /** Quantidade consumida, opcional: kWh (energia) ou m³ (água). */
+  quantidade?: number | null;
   mes: string;
   descricao: string;
 }

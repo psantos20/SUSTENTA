@@ -7,6 +7,7 @@
 
 export const LIMITES = {
   valorMax: 1_000_000,
+  quantidadeMax: 1_000_000,
   descricao: 300,
   subcategoria: 60,
   nome: 80,
@@ -41,6 +42,21 @@ export function validarValor(valor: number): string | null {
   // Moeda tem no máximo 2 casas decimais (menor valor aceito: R$ 0,01).
   if (Math.abs(valor * 100 - Math.round(valor * 100)) > 1e-6) {
     return 'Use no máximo 2 casas decimais (ex.: 12,50).';
+  }
+  return null;
+}
+
+/**
+ * Quantidade consumida (kWh de energia ou m³ de água). É opcional: vazio/nulo é
+ * válido. Quando informada precisa ser > 0, até 1.000.000 e com no máximo 2
+ * casas decimais.
+ */
+export function validarQuantidade(quantidade: number | null | undefined): string | null {
+  if (quantidade === null || quantidade === undefined) return null;
+  if (!Number.isFinite(quantidade) || quantidade <= 0) return 'Informe uma quantidade válida ou deixe em branco.';
+  if (quantidade > LIMITES.quantidadeMax) return 'Quantidade muito alta. Confira o número digitado.';
+  if (Math.abs(quantidade * 100 - Math.round(quantidade * 100)) > 1e-6) {
+    return 'Use no máximo 2 casas decimais na quantidade.';
   }
   return null;
 }

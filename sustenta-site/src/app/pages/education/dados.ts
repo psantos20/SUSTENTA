@@ -130,6 +130,22 @@ export const DESAFIOS_SEMANA = [
 ];
 
 
+/**
+ * Fator de emissão da energia elétrica: média do Sistema Interligado Nacional
+ * em 2023, 38,5 kg CO2/MWh = 0,0385 kg CO2/kWh (MCTI, divulgado em fev/2024).
+ * Atenção: desde a atualização da base de cálculo em 2025 (inclusão de solar e
+ * eólica) os valores mensais do MCTI ficaram menores (~0,02 a 0,03 kg/kWh).
+ * Para atualizar, troque este número pelo valor do ano mais recente em
+ * https://www.gov.br/mcti (SIRENE > fatores de emissão).
+ */
+export const FATOR_ENERGIA_KG_POR_KWH = 0.0385;
+
+/**
+ * ESTIMATIVAS por real gasto (kg CO2 por R$), usadas só quando o usuário NÃO
+ * informou a quantidade (kWh/m³). São valores aproximados, sem fonte oficial:
+ * a conta em R$ depende da tarifa de cada cidade. Água e "outros" ainda usam
+ * sempre a estimativa (não há fator oficial adotado no projeto).
+ */
 export const CARBON_FACTORS = { energia: 0.083, agua: 0.021, outro: 0.045 };
 
 export const MESES_SHORT = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
