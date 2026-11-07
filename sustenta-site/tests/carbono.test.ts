@@ -7,7 +7,7 @@ import { describe, it, expect, vi } from 'vitest';
 vi.mock('../src/services/firebase', () => ({ db: {}, auth: { currentUser: null } }));
 vi.mock('../src/services/api', () => ({ chamarFuncaoAutenticada: vi.fn() }));
 
-import { calcularCarbono, carbonoDoRegistro } from '../src/app/pages/education/carbono';
+import { calcularCarbono, carbonoDoRegistro, classificarNivel } from '../src/app/pages/education/carbono';
 import { CARBON_FACTORS, FATOR_ENERGIA_KG_POR_KWH } from '../src/app/pages/education/dados';
 import { validarQuantidade } from '../src/services/validacao';
 
@@ -70,6 +70,42 @@ describe('Carbono: total do mês', () => {
     const res = calcularCarbono([reg('energia', 120, 100), reg('energia', 130, 110)]);
     expect(res.registrosEstimados).toBe(0);
     expect(res.estimadoKg).toBe(0);
+  });
+});
+
+describe('Nível do mês: comparação com a média dos outros meses (Valor Limite em ±10%)', () => {
+  const outros = [100, 100, 100]; // média 100
+
+  it.each([
+    [89.9, 'abaixo'],
+    [90, 'media'], // exatamente -10%: ainda na média
+    [100, 'media'],
+    [110, 'media'], // exatamente +10%: ainda na média
+    [110.1, 'acima'],
+    [0, 'abaixo'],
+  ])('mês com %s kg (média 100) -> %s', (total, esperado) => {
+    expect(classificarNivel(total, outros)?.chave).toBe(esperado);
+  });
+
+  it('informa a variação percentual e a média usada', () => {
+    const r = classificarNivel(120, [100, 100]);
+    expect(r).toMatchObject({ chave: 'acima', variacaoPercentual: 20, mediaKg: 100, meses: 2 });
+  });
+
+  it('ignora meses sem registro (0 kg) na média', () => {
+    const r = classificarNivel(50, [0, 100, 0, 0, 100]);
+    expect(r?.meses).toBe(2);
+    expect(r?.chave).toBe('abaixo');
+  });
+
+  it('sem outros meses com dados não classifica (não inventa nível)', () => {
+    expect(classificarNivel(5, [])).toBeNull();
+    expect(classificarNivel(5, [0, 0])).toBeNull();
+  });
+
+  it('entradas inválidas não classificam', () => {
+    expect(classificarNivel(Number.NaN, [100])).toBeNull();
+    expect(classificarNivel(-1, [100])).toBeNull();
   });
 });
 

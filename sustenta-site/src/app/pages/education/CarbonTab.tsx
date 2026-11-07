@@ -7,7 +7,7 @@ import { auth, db } from '../../../services/firebase';
 import clsx from 'clsx';
 import type { Registro } from './tipos';
 import { CARBON_FACTORS, FATOR_ENERGIA_KG_POR_KWH } from './dados';
-import { calcularCarbono, gerarDicaIA, getMesLabel } from './carbono';
+import { calcularCarbono, classificarNivel, gerarDicaIA, getMesLabel } from './carbono';
 import { GlassCard } from './componentes';
 
 
@@ -22,7 +22,7 @@ export function CarbonTab() {
   const [mesSel, setMesSel] = useState(meses6[0]);
   const [loading, setLoading] = useState(false);
   const [carbono, setCarbono] = useState<ReturnType<typeof calcularCarbono> | null>(null);
-  const [historico, setHistorico] = useState<{ label: string; kg: number }[]>([]);
+  const [historico, setHistorico] = useState<{ mes: string; label: string; kg: number }[]>([]);
   const [dicaIA, setDicaIA] = useState('');
   const [loadingIA, setLoadingIA] = useState(false);
 
@@ -68,6 +68,7 @@ export function CarbonTab() {
           const kg = calcularCarbono(rs).totalKg;
 
           return {
+            mes: m,
             label: getMesLabel(m, true),
             kg: +kg.toFixed(1),
           };
@@ -93,28 +94,37 @@ export function CarbonTab() {
     }
   }
 
-  const nivel = carbono
-    ? carbono.totalKg < 50
-      ? {
-          label: 'Baixo',
-          color: 'text-emerald-400',
-          bg: 'bg-emerald-600/20 border-emerald-600/30',
-          bar: 'bg-emerald-500',
-        }
-      : carbono.totalKg < 120
-        ? {
-            label: 'Medio',
-            color: 'text-yellow-400',
-            bg: 'bg-yellow-600/20 border-yellow-600/30',
-            bar: 'bg-yellow-500',
-          }
-        : {
-            label: 'Alto',
-            color: 'text-red-400',
-            bg: 'bg-red-600/20 border-red-600/30',
-            bar: 'bg-red-500',
-          }
-    : null;
+  // Compara o mês escolhido com a média dos OUTROS meses do próprio usuário.
+  const comparacao =
+    carbono && historico.length > 0
+      ? classificarNivel(
+          carbono.totalKg,
+          historico.filter((h) => h.mes !== mesSel).map((h) => h.kg)
+        )
+      : null;
+
+  const ESTILO_NIVEL = {
+    abaixo: {
+      label: 'Abaixo da sua media',
+      color: 'text-emerald-400',
+      bg: 'bg-emerald-600/20 border-emerald-600/30',
+      bar: 'bg-emerald-500',
+    },
+    media: {
+      label: 'Na sua media',
+      color: 'text-yellow-400',
+      bg: 'bg-yellow-600/20 border-yellow-600/30',
+      bar: 'bg-yellow-500',
+    },
+    acima: {
+      label: 'Acima da sua media',
+      color: 'text-red-400',
+      bg: 'bg-red-600/20 border-red-600/30',
+      bar: 'bg-red-500',
+    },
+  } as const;
+
+  const nivel = comparacao ? ESTILO_NIVEL[comparacao.chave] : null;
 
   return (
     <div className="space-y-4">
@@ -197,33 +207,47 @@ export function CarbonTab() {
                 <span className="text-xl text-slate-400 pb-2">kg CO2</span>
               </div>
 
-              {nivel && (
+              {nivel && comparacao ? (
                 <>
                   <span
                     className={clsx(
-                      'inline-block text-sm font-bold px-4 py-1 rounded-full border mb-3',
+                      'inline-block text-sm font-bold px-4 py-1 rounded-full border',
                       nivel.bg,
                       nivel.color
                     )}
                   >
-                    Nivel {nivel.label}
+                    {nivel.label}
                   </span>
 
-                  <div className="w-full h-2 bg-white/10 rounded-full overflow-hidden mt-2">
-                    <motion.div
-                      initial={{ width: 0 }}
-                      animate={{ width: `${Math.min((carbono.totalKg / 167) * 100, 100)}%` }}
-                      transition={{ duration: 1.2, ease: 'easeOut' }}
-                      className={clsx('h-full rounded-full', nivel.bar)}
-                    />
-                  </div>
-
-                  <p className="text-xs text-slate-500 mt-1.5">
-                    Referencia: 167 kg CO2/mes (2 t/ano) e o orcamento de uma pessoa somando TODAS as
-                    atividades (transporte, alimentacao etc.). Aqui contamos so o que voce registrou.
+                  <p className="text-xs text-slate-400 mt-2">
+                    {comparacao.variacaoPercentual === 0
+                      ? 'Igual a'
+                      : `${Math.abs(comparacao.variacaoPercentual)}% ${comparacao.variacaoPercentual < 0 ? 'abaixo da' : 'acima da'}`}{' '}
+                    media dos outros {comparacao.meses} mes{comparacao.meses !== 1 ? 'es' : ''} com registro (
+                    {comparacao.mediaKg.toFixed(1)} kg CO2).
                   </p>
                 </>
+              ) : (
+                <p className="text-xs text-slate-500">
+                  {historico.length > 0
+                    ? 'Registre outros meses para comparar com a sua media.'
+                    : 'Comparando com os seus outros meses...'}
+                </p>
               )}
+
+              <div className="w-full h-2 bg-white/10 rounded-full overflow-hidden mt-4">
+                <motion.div
+                  initial={{ width: 0 }}
+                  animate={{ width: `${Math.min((carbono.totalKg / 167) * 100, 100)}%` }}
+                  transition={{ duration: 1.2, ease: 'easeOut' }}
+                  className={clsx('h-full rounded-full', nivel ? nivel.bar : 'bg-slate-500')}
+                />
+              </div>
+
+              <p className="text-xs text-slate-500 mt-1.5">
+                Referencia: 167 kg CO2/mes (2 t/ano) e o orcamento de uma pessoa somando TODAS as
+                atividades (transporte, alimentacao etc.). Aqui contamos so o que voce registrou.
+              </p>
             </GlassCard>
 
             <GlassCard className="p-4 space-y-2">

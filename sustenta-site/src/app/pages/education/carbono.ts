@@ -51,6 +51,28 @@ export function calcularCarbono(registros: Registro[]) {
 }
 
 
+/** Variação (±) em relação à média dos outros meses para ainda contar como "na média". */
+export const FAIXA_NA_MEDIA = 0.1;
+
+/**
+ * Classifica o mês comparando com a MÉDIA DOS OUTROS MESES do próprio usuário
+ * (meses sem registro, com 0 kg, não entram). Não usa limites fixos: o app só
+ * conta energia, água e outros gastos, então não há um número oficial "certo"
+ * para comparar. Sem outros meses com dados, não há como classificar (null).
+ */
+export function classificarNivel(totalKg: number, outrosMesesKg: number[]) {
+  const base = outrosMesesKg.filter((k) => Number.isFinite(k) && k > 0);
+  if (base.length === 0 || !Number.isFinite(totalKg) || totalKg < 0) return null;
+
+  const mediaKg = base.reduce((s, k) => s + k, 0) / base.length;
+  const variacao = Math.round(((totalKg - mediaKg) / mediaKg) * 1e6) / 1e6;
+  const chave: 'abaixo' | 'media' | 'acima' =
+    variacao < -FAIXA_NA_MEDIA ? 'abaixo' : variacao > FAIXA_NA_MEDIA ? 'acima' : 'media';
+
+  return { chave, variacaoPercentual: Math.round(variacao * 100), mediaKg, meses: base.length };
+}
+
+
 export async function gerarDicaIA(e: number, a: number, o: number, kg: number): Promise<string> {
   // A chave da IA fica só no servidor (função dica-ia). O navegador envia
   // apenas os números, junto com o token de login do Firebase.
