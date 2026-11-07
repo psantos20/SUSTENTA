@@ -4,7 +4,7 @@ import { COR_CATEGORIA, diaDaSemana } from './dados';
 import type { HabitosCtx } from './useHabitos';
 
 export function HabitosTab(p: HabitosCtx) {
-  const { dados, salvando, setModalHabito, setHabitoDetalhe, alternarHabito, deletarHabito, todosHabitos, dataHoje, feitos, concluidos, total, percentual, dias7, streak, xpHabitos } = p;
+  const { dados, salvando, setModalHabito, setHabitoDetalhe, alternarHabito, deletarHabito, todosHabitos, dataHoje, feitos, concluidos, total, percentual, dias7, streak, melhorStreak, streakEmRisco, marcoSeguinte, marcoRecente, setMarcoRecente, xpHabitos } = p;
   return (
     <motion.div
       key="habitos"
@@ -218,6 +218,46 @@ export function HabitosTab(p: HabitosCtx) {
                 </div>
               );
             })}
+          </div>
+
+          {marcoRecente && (
+            <div
+              role="status"
+              className="mt-5 flex items-center justify-between gap-3 p-3 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-2xl"
+            >
+              <p className="text-xs font-bold text-orange-700 dark:text-orange-300">
+                🔥 {marcoRecente.dias} dias seguidos! Bônus de +{marcoRecente.xp} XP
+              </p>
+              <button
+                type="button"
+                onClick={() => setMarcoRecente(null)}
+                className="text-[10px] font-bold text-orange-600 dark:text-orange-400 hover:underline"
+              >
+                Fechar
+              </button>
+            </div>
+          )}
+
+          {streakEmRisco && (
+            <p
+              role="alert"
+              className="mt-5 text-xs font-medium text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-2xl p-3"
+            >
+              Sua sequência de {streak} dia{streak !== 1 ? 's' : ''} termina hoje. Marque um hábito para mantê-la!
+            </p>
+          )}
+
+          <div className="mt-5 flex flex-col gap-1 text-[11px] text-slate-500 dark:text-slate-400">
+            <span>
+              Melhor sequência: <strong className="text-slate-700 dark:text-slate-200">{melhorStreak} dia{melhorStreak !== 1 ? 's' : ''}</strong>
+            </span>
+            {marcoSeguinte ? (
+              <span>
+                Próximo bônus: {marcoSeguinte.dias} dias (+{marcoSeguinte.xp} XP)
+              </span>
+            ) : (
+              <span>Todos os bônus alcançados</span>
+            )}
           </div>
 
           {streak > 0 && (

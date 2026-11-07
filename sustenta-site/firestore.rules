@@ -188,7 +188,7 @@ service cloud.firestore {
     match /habitos_usuarios/{uid} {
       function habitosKeys() {
         return [
-          'uid', 'streak', 'ultimoRegistro', 'diasAtivos', 'habitosPersonalizados',
+          'uid', 'streak', 'maiorStreak', 'ultimoRegistro', 'diasAtivos', 'habitosPersonalizados',
           'progressoHabitos', 'progressoDesafios', 'xpHabitos'
         ];
       }
@@ -196,6 +196,8 @@ service cloud.firestore {
       function validHabitos() {
         let d = incoming();
         return (!('uid' in d) || d.uid == uid)
+          && (!('streak' in d) || (d.streak is number && d.streak >= 0 && d.streak <= 100000))
+          && (!('maiorStreak' in d) || (d.maiorStreak is number && d.maiorStreak >= 0 && d.maiorStreak <= 100000))
           && (!('habitosPersonalizados' in d) || (d.habitosPersonalizados is list && d.habitosPersonalizados.size() <= 50))
           && (!('progressoDesafios' in d) || (d.progressoDesafios is list && d.progressoDesafios.size() <= 100))
           && xpDeltaOk('xpHabitos', 1000);

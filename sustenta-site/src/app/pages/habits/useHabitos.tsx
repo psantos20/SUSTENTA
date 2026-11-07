@@ -5,6 +5,7 @@ import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
 import { useNotificacoes } from '../../contexts/NotificacoesPage';
 import type { Categoria, DadosUsuarioHabitos, Desafio, Habito, ProgressoDesafio, ProgressoHabito } from './tipos';
 import { HABITOS_PREDEFINIDOS, hoje, ultimos7Dias } from './dados';
+import { bonusDosMarcos, marcosAlcancados, ofensivaAposMarcar, ofensivaAtual, ofensivaEmRisco, proximoMarco } from './ofensiva';
 
 export function useHabitos() {
   const { recarregar: recarregarNotifs } = useNotificacoes();
@@ -20,6 +21,8 @@ export function useHabitos() {
   const [novoTitulo, setNovoTitulo] = React.useState('');
   const [novaCategoria, setNovaCategoria] = React.useState<Categoria>('Geral');
   const [novoPontos, setNovoPontos] = React.useState('20');
+
+  const [marcoRecente, setMarcoRecente] = React.useState<{ dias: number; xp: number } | null>(null);
 
   const [rankingFamilia, setRankingFamilia] = React.useState<{ nome: string; xp: number; uid: string }[]>([]);
 
@@ -141,22 +144,19 @@ export function useHabitos() {
       xpGanho: habito.pontos,
     };
 
-    const ontem = new Date();
-    ontem.setDate(ontem.getDate() - 1);
-    const ontemStr = ontem.toISOString().split('T')[0];
-
-    const streakAtual =
-      dados.ultimoRegistro === ontemStr || dados.ultimoRegistro === dataHoje
-        ? dados.streak + (dados.ultimoRegistro === dataHoje ? 0 : 1)
-        : 1;
+    const streakAnterior = ofensivaAtual(dados.streak || 0, dados.ultimoRegistro, dataHoje);
+    const streakAtual = ofensivaAposMarcar(dados.streak || 0, dados.ultimoRegistro, dataHoje);
+    const marcos = marcosAlcancados(streakAnterior, streakAtual);
+    const bonus = bonusDosMarcos(streakAnterior, streakAtual);
 
     const diasAtivosNovos = [...new Set([...dados.diasAtivos, dataHoje])].slice(-7);
-    const novoXP = (dados.xpHabitos || 0) + habito.pontos;
+    const novoXP = (dados.xpHabitos || 0) + habito.pontos + bonus;
 
     const dadosAtualizados: DadosUsuarioHabitos = {
       ...dados,
       progressoHabitos: [...dados.progressoHabitos, novoProgresso],
       streak: streakAtual,
+      maiorStreak: Math.max(dados.maiorStreak || 0, streakAtual),
       ultimoRegistro: dataHoje,
       diasAtivos: diasAtivosNovos,
       xpHabitos: novoXP,
@@ -175,11 +175,15 @@ export function useHabitos() {
 
         await setDoc(
           doc(db, 'usuarios', user.uid),
-          { xpHabitos: xpAtual + habito.pontos },
+          { xpHabitos: xpAtual + habito.pontos + bonus },
           { merge: true }
         );
       } catch (erroPerfil) {
         console.warn('XP do perfil não foi atualizado, mas o hábito foi salvo:', erroPerfil);
+      }
+
+      if (marcos.length > 0) {
+        setMarcoRecente({ dias: marcos[marcos.length - 1].dias, xp: bonus });
       }
 
       recarregarNotifs();
@@ -400,7 +404,11 @@ export function useHabitos() {
   const total = todosHabitos.length;
   const percentual = total > 0 ? Math.round((concluidos / total) * 100) : 0;
   const dias7 = ultimos7Dias();
-  const streak = dados?.streak || 0;
+  // A sequência guardada só muda ao marcar um hábito; a que vale hoje considera os dias sem marcar.
+  const streak = ofensivaAtual(dados?.streak || 0, dados?.ultimoRegistro || '', dataHoje);
+  const melhorStreak = Math.max(dados?.maiorStreak || 0, streak);
+  const streakEmRisco = ofensivaEmRisco(dados?.streak || 0, dados?.ultimoRegistro || '', dataHoje);
+  const marcoSeguinte = proximoMarco(streak);
   const xpHabitos = dados?.xpHabitos || 0;
 
   return {
@@ -440,6 +448,11 @@ export function useHabitos() {
     percentual,
     dias7,
     streak,
+    melhorStreak,
+    streakEmRisco,
+    marcoSeguinte,
+    marcoRecente,
+    setMarcoRecente,
     xpHabitos,
   };
 }

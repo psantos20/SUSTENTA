@@ -42,6 +42,8 @@ export interface ProgressoDesafio {
 export interface DadosUsuarioHabitos {
   uid: string;
   streak: number;
+  /** Maior sequência já alcançada (opcional: contas antigas não têm). */
+  maiorStreak?: number;
   ultimoRegistro: string;
   diasAtivos: string[];
   habitosPersonalizados: Habito[];

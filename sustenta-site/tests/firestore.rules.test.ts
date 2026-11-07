@@ -224,6 +224,16 @@ describe('família', () => {
     await assertFails(getDoc(doc(db(EVE), 'habitos_usuarios', ALICE)));
   });
 
+  it('ofensiva: aceita streak/maiorStreak válidos e rejeita inválidos', async () => {
+    await seedGrupo(false);
+    const ref = doc(db(ALICE), 'habitos_usuarios', ALICE);
+    await assertSucceeds(updateDoc(ref, { streak: 7, maiorStreak: 10, ultimoRegistro: '2026-10-23' }));
+    await assertFails(updateDoc(ref, { streak: -1 }));
+    await assertFails(updateDoc(ref, { maiorStreak: 100001 }));
+    await assertFails(updateDoc(ref, { streak: '7' }));
+    await assertFails(updateDoc(doc(db(EVE), 'habitos_usuarios', ALICE), { streak: 3 }));
+  });
+
   it('gastos só ficam visíveis à família se o dono autorizar', async () => {
     await seedGrupo(false);
     await assertFails(getDocs(query(collection(db(BOB), 'registros'), where('uid', '==', ALICE))));

@@ -1,20 +1,18 @@
 import React from 'react';
 import { Zap, Droplets, Trash2, Star, Target, Leaf } from 'lucide-react';
 import type { Categoria, Desafio, Habito } from './tipos';
+import { dataLocal, somarDias } from './ofensiva';
 
 
-export const hoje = () => new Date().toISOString().split('T')[0];
+export const hoje = () => dataLocal();
 
 
 export const DIAS_SEMANA = ['D', 'S', 'T', 'Q', 'Q', 'S', 'S'];
 
 
 export function ultimos7Dias(): string[] {
-  return Array.from({ length: 7 }, (_, i) => {
-    const d = new Date();
-    d.setDate(d.getDate() - (6 - i));
-    return d.toISOString().split('T')[0];
-  });
+  const dia = hoje();
+  return Array.from({ length: 7 }, (_, i) => somarDias(dia, -(6 - i)));
 }
 
 
