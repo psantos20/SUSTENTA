@@ -2,10 +2,11 @@ import { MapPin, Calendar, Mail, Phone, Leaf, Trophy, Users, Edit2, Camera, Lock
 import { motion } from 'motion/react';
 import { auth } from '../../../services/firebase';
 import { NOME_POR_SIGLA, formatarMesAno, iniciais, moeda } from './auxiliares';
+import { MedalhasCard } from './MedalhasCard';
 import type { PerfilCtx } from './usePerfil';
 
 export function PerfilTab(p: PerfilCtx) {
-  const { setActiveTab, usuario, estatisticas, grupo, setModalAberto, nivel, xpPercent, nivelCor, nomeUsuario, xpTotal, conquistas } = p;
+  const { setActiveTab, usuario, estatisticas, grupo, setModalAberto, nivel, xpPercent, nivelCor, nomeUsuario, xpTotal, conquistas, medalhas } = p;
   return (
     <motion.div
       key="perfil"
@@ -195,6 +196,8 @@ export function PerfilTab(p: PerfilCtx) {
               </div>
             </div>
           </div>
+
+          <MedalhasCard medalhas={medalhas} />
 
           <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm">
             <h3 className="font-bold text-slate-900 dark:text-slate-100 mb-6">Historico de Conquistas Recentes</h3>

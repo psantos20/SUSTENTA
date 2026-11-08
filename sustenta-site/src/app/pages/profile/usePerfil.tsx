@@ -10,6 +10,8 @@ import { LIMITES, limparTexto, validarSenha } from '../../../services/validacao'
 import type { EstatisticasData, GrupoFamiliaDetalhado, UsuarioData } from './tipos';
 import { NIVEIS_CORES, formatarMesAno } from './auxiliares';
 import { buscarDadosMembro } from './membros';
+import { calcularMedalhas } from './medalhas';
+import type { EntradaMedalhas } from './medalhas';
 
 export function usePerfil() {
   const { darkMode, toggleDarkMode } = useTheme();
@@ -17,6 +19,7 @@ export function usePerfil() {
   const [activeTab, setActiveTab] = React.useState<'perfil' | 'familia' | 'config'>('perfil');
   const [usuario, setUsuario] = React.useState<UsuarioData | null>(null);
   const [estatisticas, setEstatisticas] = React.useState<EstatisticasData | null>(null);
+  const [dadosMedalhas, setDadosMedalhas] = React.useState<Omit<EntradaMedalhas, 'temGrupoFamilia'> | null>(null);
   const [carregando, setCarregando] = React.useState(true);
 
   const [grupo, setGrupo] = React.useState<GrupoFamiliaDetalhado | null>(null);
@@ -138,6 +141,22 @@ export function usePerfil() {
             .filter((r) => r.categoria === 'agua')
             .reduce((s, r) => s + r.valor, 0),
           mesesAtivos: meses,
+        });
+
+        // Hábitos e desafios entram nas medalhas; se não der para ler, as demais medalhas continuam valendo.
+        let habitos: { maiorStreak?: number; streak?: number; xpHabitos?: number; progressoDesafios?: { concluido?: boolean }[] } = {};
+        try {
+          const hSnap = await getDoc(doc(db, 'habitos_usuarios', user.uid));
+          if (hSnap.exists()) habitos = hSnap.data() as typeof habitos;
+        } catch (erroHabitos) {
+          console.warn('Hábitos não carregados para as medalhas:', erroHabitos);
+        }
+
+        setDadosMedalhas({
+          registros,
+          maiorStreak: Math.max(habitos.maiorStreak || 0, habitos.streak || 0),
+          desafiosConcluidos: (habitos.progressoDesafios || []).filter((d) => d.concluido).length,
+          xpHabitos: habitos.xpHabitos || 0,
         });
       } catch (e) {
         console.error('Erro ao carregar perfil:', e);
@@ -449,6 +468,12 @@ export function usePerfil() {
   const totalGrupoEnergia = grupo?.membros.reduce((s, m) => s + (m.dados?.energiaTotal || 0), 0) || 0;
   const totalGrupoAgua = grupo?.membros.reduce((s, m) => s + (m.dados?.aguaTotal || 0), 0) || 0;
 
+  const hojeMes = new Date();
+  const mesAtual = `${hojeMes.getFullYear()}-${String(hojeMes.getMonth() + 1).padStart(2, '0')}`;
+  const medalhas = dadosMedalhas
+    ? calcularMedalhas({ ...dadosMedalhas, temGrupoFamilia: !!usuario?.grupoFamiliaId || !!grupo }, mesAtual)
+    : [];
+
   const conquistas = [
     estatisticas && estatisticas.totalRegistros >= 1
       ? { title: 'Primeiro registro realizado no Sustenta', date: usuario?.criadoEm ? formatarMesAno(usuario.criadoEm) : '', pts: 100 }
@@ -568,6 +593,7 @@ export function usePerfil() {
     totalGrupoEnergia,
     totalGrupoAgua,
     conquistas,
+    medalhas,
   };
 }
 
