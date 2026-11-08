@@ -189,7 +189,7 @@ service cloud.firestore {
       function habitosKeys() {
         return [
           'uid', 'streak', 'maiorStreak', 'ultimoRegistro', 'diasAtivos', 'habitosPersonalizados',
-          'progressoHabitos', 'progressoDesafios', 'xpHabitos', 'dicasDoDia'
+          'progressoHabitos', 'progressoDesafios', 'xpHabitos', 'dicasDoDia', 'missoesFamilia'
         ];
       }
 
@@ -201,12 +201,21 @@ service cloud.firestore {
           && x.respostas is map && x.respostas.size() <= 10;
       }
 
+      // { semana: 'AAAA-MM-DD' (segunda-feira), resgatadas: [ids das missões] } (até 10)
+      function validMissoesFamilia(x) {
+        return x is map
+          && x.keys().hasOnly(['semana', 'resgatadas'])
+          && x.semana is string && x.semana.size() == 10
+          && x.resgatadas is list && x.resgatadas.size() <= 10;
+      }
+
       function validHabitos() {
         let d = incoming();
         return (!('uid' in d) || d.uid == uid)
           && (!('streak' in d) || (d.streak is number && d.streak >= 0 && d.streak <= 100000))
           && (!('maiorStreak' in d) || (d.maiorStreak is number && d.maiorStreak >= 0 && d.maiorStreak <= 100000))
           && (!('dicasDoDia' in d) || validDicasDoDia(d.dicasDoDia))
+          && (!('missoesFamilia' in d) || validMissoesFamilia(d.missoesFamilia))
           && (!('habitosPersonalizados' in d) || (d.habitosPersonalizados is list && d.habitosPersonalizados.size() <= 50))
           && (!('progressoDesafios' in d) || (d.progressoDesafios is list && d.progressoDesafios.size() <= 100))
           && xpDeltaOk('xpHabitos', 1000);

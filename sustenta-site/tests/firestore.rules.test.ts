@@ -247,6 +247,18 @@ describe('família', () => {
     await assertFails(updateDoc(ref, { xpHabitos: 5000 }));
   });
 
+  it('missões da família: aceita o formato esperado e rejeita lixo', async () => {
+    await seedGrupo(false);
+    const ref = doc(db(ALICE), 'habitos_usuarios', ALICE);
+    await assertSucceeds(updateDoc(ref, { missoesFamilia: { semana: '2026-10-19', resgatadas: ['mf-movimento'] }, xpHabitos: 50 }));
+    await assertFails(updateDoc(ref, { missoesFamilia: 'x' }));
+    await assertFails(updateDoc(ref, { missoesFamilia: { semana: '19/10/2026', resgatadas: [] } }));
+    await assertFails(updateDoc(ref, { missoesFamilia: { semana: '2026-10-19', resgatadas: 'x' } }));
+    await assertFails(updateDoc(ref, { missoesFamilia: { semana: '2026-10-19', resgatadas: [], extra: 1 } }));
+    await assertFails(updateDoc(ref, { missoesFamilia: { semana: '2026-10-19', resgatadas: Array.from({ length: 11 }, (_, i) => `m${i}`) } }));
+    await assertFails(updateDoc(doc(db(BOB), 'habitos_usuarios', ALICE), { missoesFamilia: { semana: '2026-10-19', resgatadas: [] } }));
+  });
+
   it('gastos só ficam visíveis à família se o dono autorizar', async () => {
     await seedGrupo(false);
     await assertFails(getDocs(query(collection(db(BOB), 'registros'), where('uid', '==', ALICE))));

@@ -37,7 +37,7 @@ export const HabitsPage: React.FC = () => {
             { id: 'habitos', label: 'Checklist Diário' },
             { id: 'desafios', label: 'Desafios Mensais' },
             { id: 'dicas', label: 'Dicas do Dia' },
-            { id: 'ranking', label: 'Ranking' },
+            { id: 'ranking', label: 'Família' },
           ].map((tab) => (
             <button
               key={tab.id}

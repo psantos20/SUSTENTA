@@ -1,6 +1,7 @@
 import { Users, Award } from 'lucide-react';
 import { motion } from 'motion/react';
 import { auth } from '../../../services/firebase';
+import { MissoesFamiliaCard } from './MissoesFamiliaCard';
 import type { HabitosCtx } from './useHabitos';
 
 export function RankingTab(p: HabitosCtx) {
@@ -13,6 +14,8 @@ export function RankingTab(p: HabitosCtx) {
       exit={{ opacity: 0, y: -10 }}
       className="max-w-2xl mx-auto space-y-6"
     >
+      <MissoesFamiliaCard {...p} />
+
       <div className="bg-white dark:bg-slate-800 rounded-3xl border border-slate-100 dark:border-slate-700 shadow-sm overflow-hidden">
         <div className="px-8 py-6 border-b border-slate-50 dark:border-slate-700 flex items-center gap-3">
           <div className="p-2.5 bg-amber-50 dark:bg-amber-900/20 rounded-xl">

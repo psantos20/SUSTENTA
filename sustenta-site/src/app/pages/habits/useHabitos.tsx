@@ -5,9 +5,23 @@ import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
 import { useNotificacoes } from '../../contexts/NotificacoesPage';
 import type { Categoria, DadosUsuarioHabitos, Desafio, Habito, ProgressoDesafio, ProgressoHabito } from './tipos';
 import { HABITOS_PREDEFINIDOS, hoje, ultimos7Dias } from './dados';
+import { MIN_MEMBROS_MISSAO, calcularMissoes, podeResgatar, resgatadasDaSemana } from './missoesFamilia';
+import type { MembroHabitosResumo, MissaoFamilia } from './missoesFamilia';
 import { dicasDoDia, respostasDeHoje, transicaoDica, resumoDoDia } from './dicas';
 import type { Dica, RespostaDica } from './dicas';
 import { bonusDosMarcos, marcosAlcancados, ofensivaAposMarcar, ofensivaAtual, ofensivaEmRisco, proximoMarco } from './ofensiva';
+
+/** Só o que as missões da família precisam saber dos hábitos de um membro. */
+function resumirHabitos(uid: string, nome: string, d: Partial<DadosUsuarioHabitos>): MembroHabitosResumo {
+  return {
+    uid,
+    nome,
+    streak: d.streak || 0,
+    ultimoRegistro: d.ultimoRegistro || '',
+    progressoHabitos: (d.progressoHabitos || []).map((p) => ({ habitoId: p.habitoId, data: p.data })),
+    habitosPersonalizados: (d.habitosPersonalizados || []).map((h) => ({ id: h.id, categoria: h.categoria })),
+  };
+}
 
 export function useHabitos() {
   const { recarregar: recarregarNotifs } = useNotificacoes();
@@ -26,7 +40,8 @@ export function useHabitos() {
 
   const [marcoRecente, setMarcoRecente] = React.useState<{ dias: number; xp: number } | null>(null);
 
-  const [rankingFamilia, setRankingFamilia] = React.useState<{ nome: string; xp: number; uid: string }[]>([]);
+  const [rankingCarregado, setRankingFamilia] = React.useState<{ nome: string; xp: number; uid: string }[]>([]);
+  const [membrosFamilia, setMembrosFamilia] = React.useState<MembroHabitosResumo[]>([]);
 
   React.useEffect(() => {
     const fetchDados = async () => {
@@ -96,25 +111,25 @@ export function useHabitos() {
 
         const ranking = await Promise.all(
           membros.map(async (membro: any) => {
+            const nome = membro.nome || membro.email || 'Usuário';
             try {
               const membroHabitosSnap = await getDoc(doc(db, 'habitos_usuarios', membro.uid));
+              const dm = (membroHabitosSnap.exists() ? membroHabitosSnap.data() : {}) as Partial<DadosUsuarioHabitos>;
 
               return {
                 uid: membro.uid,
-                nome: membro.nome || membro.email || 'Usuário',
-                xp: membroHabitosSnap.exists() ? membroHabitosSnap.data().xpHabitos || 0 : 0,
+                nome,
+                xp: dm.xpHabitos || 0,
+                resumo: resumirHabitos(membro.uid, nome, dm),
               };
             } catch {
-              return {
-                uid: membro.uid,
-                nome: membro.nome || membro.email || 'Usuário',
-                xp: 0,
-              };
+              return { uid: membro.uid, nome, xp: 0, resumo: resumirHabitos(membro.uid, nome, {}) };
             }
           })
         );
 
-        setRankingFamilia(ranking.sort((a, b) => b.xp - a.xp));
+        setMembrosFamilia(ranking.map((r) => r.resumo));
+        setRankingFamilia(ranking.map(({ uid, nome, xp }) => ({ uid, nome, xp })).sort((a, b) => b.xp - a.xp));
       } catch (e) {
         console.error('Erro ao carregar hábitos e ranking familiar:', e);
         setRankingFamilia([]);
@@ -379,6 +394,41 @@ export function useHabitos() {
     }
   };
 
+  const resgatarMissao = async (missao: MissaoFamilia) => {
+    const user = auth.currentUser;
+    if (!user || !dados || !semanaFamilia) return;
+
+    const resgatadas = resgatadasDaSemana(dados.missoesFamilia, semanaFamilia.semana);
+    if (!podeResgatar(missao, resgatadas)) return;
+
+    setSalvando(`missao:${missao.id}`);
+
+    const novoRegistro = { semana: semanaFamilia.semana, resgatadas: [...resgatadas, missao.id] };
+    const novoXP = (dados.xpHabitos || 0) + missao.xp;
+
+    try {
+      await setDoc(
+        doc(db, 'habitos_usuarios', user.uid),
+        { missoesFamilia: novoRegistro, xpHabitos: novoXP },
+        { merge: true }
+      );
+
+      setDados((prev) => (prev ? { ...prev, missoesFamilia: novoRegistro, xpHabitos: novoXP } : prev));
+
+      try {
+        const userSnap = await getDoc(doc(db, 'usuarios', user.uid));
+        const xpAtual = userSnap.data()?.xpHabitos || 0;
+        await setDoc(doc(db, 'usuarios', user.uid), { xpHabitos: xpAtual + missao.xp }, { merge: true });
+      } catch (erroPerfil) {
+        console.warn('XP do perfil não foi atualizado, mas a missão foi resgatada:', erroPerfil);
+      }
+    } catch (e) {
+      console.error('Erro ao resgatar missão da família:', e);
+    } finally {
+      setSalvando(null);
+    }
+  };
+
   const criarHabito = async () => {
     if (!novoTitulo.trim()) return;
 
@@ -452,6 +502,18 @@ export function useHabitos() {
   const marcoSeguinte = proximoMarco(streak);
   const xpHabitos = dados?.xpHabitos || 0;
 
+  // Missões da família: o seu próprio progresso vem do estado local (atualiza na hora ao marcar um hábito).
+  const meuUid = auth.currentUser?.uid;
+  const membrosMissao = membrosFamilia.map((m) =>
+    dados && m.uid === meuUid ? resumirHabitos(m.uid, m.nome, dados) : m
+  );
+  // O ranking mostra o seu XP atual (o carregado no início fica velho ao marcar hábitos, dicas ou missões).
+  const rankingFamilia = rankingCarregado
+    .map((r) => (r.uid === meuUid && dados ? { ...r, xp: dados.xpHabitos || 0 } : r))
+    .sort((a, b) => b.xp - a.xp);
+  const semanaFamilia = membrosMissao.length >= MIN_MEMBROS_MISSAO ? calcularMissoes(membrosMissao, dataHoje) : null;
+  const missoesResgatadas = semanaFamilia ? resgatadasDaSemana(dados?.missoesFamilia, semanaFamilia.semana) : [];
+
   const dicasHoje = dicasDoDia(dataHoje);
   const respostasDicas = respostasDeHoje(dados?.dicasDoDia, dataHoje);
   const resumoDicas = resumoDoDia(dicasHoje, respostasDicas);
@@ -484,6 +546,10 @@ export function useHabitos() {
     participarDesafio,
     avancarDesafio,
     responderDica,
+    semanaFamilia,
+    missoesResgatadas,
+    resgatarMissao,
+    membrosFamilia,
     dicasHoje,
     respostasDicas,
     resumoDicas,

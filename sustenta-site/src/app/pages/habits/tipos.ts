@@ -40,6 +40,7 @@ export interface ProgressoDesafio {
 
 
 import type { DicasDoDia } from './dicas';
+import type { MissoesResgatadas } from './missoesFamilia';
 
 
 export interface DadosUsuarioHabitos {
@@ -55,4 +56,6 @@ export interface DadosUsuarioHabitos {
   xpHabitos: number;
   /** Respostas às dicas do dia (opcional: contas antigas não têm). */
   dicasDoDia?: DicasDoDia;
+  /** Missões da família já resgatadas nesta semana (opcional). */
+  missoesFamilia?: MissoesResgatadas;
 }
