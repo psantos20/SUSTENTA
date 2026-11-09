@@ -1,4 +1,13 @@
 {
-  "indexes": [],
+  "indexes": [
+    {
+      "collectionGroup": "ranking_semanal",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "semana", "order": "ASCENDING" },
+        { "fieldPath": "xp", "order": "DESCENDING" }
+      ]
+    }
+  ],
   "fieldOverrides": []
 }

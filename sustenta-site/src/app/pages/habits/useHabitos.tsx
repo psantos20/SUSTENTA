@@ -1,11 +1,13 @@
 import React from 'react';
 import { auth, db } from '../../../services/firebase';
 import { LIMITES, limitarPontosHabito, limparTexto } from '../../../services/validacao';
-import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
+import { collection, deleteDoc, doc, getDoc, getDocs, limit, orderBy, query, serverTimestamp, setDoc, updateDoc, where } from 'firebase/firestore';
 import { useNotificacoes } from '../../contexts/NotificacoesPage';
 import type { Categoria, DadosUsuarioHabitos, Desafio, Habito, ProgressoDesafio, ProgressoHabito } from './tipos';
 import { HABITOS_PREDEFINIDOS, hoje, ultimos7Dias } from './dados';
-import { MIN_MEMBROS_MISSAO, calcularMissoes, podeResgatar, resgatadasDaSemana } from './missoesFamilia';
+import { MIN_MEMBROS_MISSAO, calcularMissoes, diasDaSemana, inicioDaSemana, podeResgatar, resgatadasDaSemana } from './missoesFamilia';
+import { TAMANHO_LIGA, entrarNaLiga as novoEstadoLiga, montarLiga, nomeAbreviado, renovarLiga, xpDaSemana } from './liga';
+import type { EntradaLiga } from './liga';
 import type { MembroHabitosResumo, MissaoFamilia } from './missoesFamilia';
 import { dicasDoDia, respostasDeHoje, transicaoDica, resumoDoDia } from './dicas';
 import type { Dica, RespostaDica } from './dicas';
@@ -26,7 +28,7 @@ function resumirHabitos(uid: string, nome: string, d: Partial<DadosUsuarioHabito
 export function useHabitos() {
   const { recarregar: recarregarNotifs } = useNotificacoes();
 
-  const [activeTab, setActiveTab] = React.useState<'habitos' | 'desafios' | 'dicas' | 'ranking'>('habitos');
+  const [activeTab, setActiveTab] = React.useState<'habitos' | 'desafios' | 'dicas' | 'ranking' | 'liga'>('habitos');
   const [dados, setDados] = React.useState<DadosUsuarioHabitos | null>(null);
   const [carregando, setCarregando] = React.useState(true);
   const [salvando, setSalvando] = React.useState<string | null>(null);
@@ -42,6 +44,13 @@ export function useHabitos() {
 
   const [rankingCarregado, setRankingFamilia] = React.useState<{ nome: string; xp: number; uid: string }[]>([]);
   const [membrosFamilia, setMembrosFamilia] = React.useState<MembroHabitosResumo[]>([]);
+
+  const [nomePerfil, setNomePerfil] = React.useState('');
+  const [ligaEntradas, setLigaEntradas] = React.useState<EntradaLiga[]>([]);
+  const [ligaCarregando, setLigaCarregando] = React.useState(false);
+  const [ligaErro, setLigaErro] = React.useState(false);
+  // Última versão enviada ao ranking público (evita gravar de novo o mesmo valor).
+  const ligaEnviada = React.useRef('');
 
   React.useEffect(() => {
     const fetchDados = async () => {
@@ -87,6 +96,7 @@ export function useHabitos() {
         }
 
         const usuarioData = usuarioSnap.data();
+        setNomePerfil(typeof usuarioData?.nome === 'string' ? usuarioData.nome : '');
         const grupoId = usuarioData?.grupoFamiliaId;
 
         if (!grupoId) {
@@ -429,6 +439,46 @@ export function useHabitos() {
     }
   };
 
+  const entrarNaLiga = async () => {
+    const user = auth.currentUser;
+    if (!user || !dados) return;
+
+    setSalvando('liga');
+
+    const liga = novoEstadoLiga(inicioDaSemana(hoje()), dados.xpHabitos || 0);
+
+    try {
+      await setDoc(doc(db, 'habitos_usuarios', user.uid), { liga }, { merge: true });
+      setDados((prev) => (prev ? { ...prev, liga } : prev));
+    } catch (e) {
+      console.error('Erro ao entrar na liga:', e);
+    } finally {
+      setSalvando(null);
+    }
+  };
+
+  const sairDaLiga = async () => {
+    const user = auth.currentUser;
+    if (!user || !dados) return;
+
+    setSalvando('liga');
+
+    const liga = { participa: false, semana: inicioDaSemana(hoje()), base: 0 };
+
+    try {
+      await setDoc(doc(db, 'habitos_usuarios', user.uid), { liga }, { merge: true });
+      // Sair apaga o nome e o XP do ranking público.
+      await deleteDoc(doc(db, 'ranking_semanal', user.uid));
+      ligaEnviada.current = '';
+      setDados((prev) => (prev ? { ...prev, liga } : prev));
+      setLigaEntradas((prev) => prev.filter((e) => e.uid !== user.uid));
+    } catch (e) {
+      console.error('Erro ao sair da liga:', e);
+    } finally {
+      setSalvando(null);
+    }
+  };
+
   const criarHabito = async () => {
     if (!novoTitulo.trim()) return;
 
@@ -514,6 +564,96 @@ export function useHabitos() {
   const semanaFamilia = membrosMissao.length >= MIN_MEMBROS_MISSAO ? calcularMissoes(membrosMissao, dataHoje) : null;
   const missoesResgatadas = semanaFamilia ? resgatadasDaSemana(dados?.missoesFamilia, semanaFamilia.semana) : [];
 
+  // Liga semanal: o XP da semana é o XP atual menos o que você tinha na segunda-feira.
+  const semanaLiga = inicioDaSemana(dataHoje);
+  const participaLiga = !!dados?.liga?.participa;
+  const baseLiga = dados?.liga?.base || 0;
+  const semanaGuardadaLiga = dados?.liga?.semana || '';
+  const xpSemanaLiga = participaLiga ? xpDaSemana(xpHabitos, baseLiga) : 0;
+  const nomeLiga = nomeAbreviado(nomePerfil || auth.currentUser?.displayName);
+  const diasRestantesLiga = 7 - Math.max(0, diasDaSemana(semanaLiga).indexOf(dataHoje));
+  // A sua linha usa o XP de agora (o ranking carregado pode estar um passo atrás).
+  const entradasLiga = montarLiga(
+    [
+      ...ligaEntradas.filter((e) => !(participaLiga && e.uid === meuUid)),
+      ...(participaLiga && meuUid ? [{ uid: meuUid, nome: nomeLiga, semana: semanaLiga, xp: xpSemanaLiga }] : []),
+    ],
+    semanaLiga,
+    TAMANHO_LIGA
+  );
+  const minhaPosicaoLiga = entradasLiga.find((e) => e.uid === meuUid)?.posicao ?? null;
+
+  const verLiga = activeTab === 'liga';
+  React.useEffect(() => {
+    const user = auth.currentUser;
+    if (!user || carregando) return;
+    const sincroniza = participaLiga && semanaGuardadaLiga === semanaLiga;
+    // Semana nova: a liga zera na segunda-feira, então anota de novo o XP de partida.
+    const precisaRenovar = participaLiga && semanaGuardadaLiga !== semanaLiga;
+    if (!sincroniza && !precisaRenovar && !verLiga) return;
+
+    let cancelado = false;
+
+    const executar = async () => {
+      if (precisaRenovar) {
+        const renovada = renovarLiga({ participa: true, semana: semanaGuardadaLiga, base: baseLiga }, semanaLiga, xpHabitos);
+        if (!renovada) return;
+        try {
+          await setDoc(doc(db, 'habitos_usuarios', user.uid), { liga: renovada }, { merge: true });
+          if (!cancelado) setDados((prev) => (prev ? { ...prev, liga: renovada } : prev));
+        } catch (e) {
+          console.warn('Não foi possível renovar a liga:', e);
+        }
+        return;
+      }
+
+      if (sincroniza) {
+        const chave = `${semanaLiga}|${nomeLiga}|${xpSemanaLiga}`;
+        if (ligaEnviada.current !== chave) {
+          try {
+            await setDoc(doc(db, 'ranking_semanal', user.uid), {
+              uid: user.uid,
+              nome: nomeLiga,
+              semana: semanaLiga,
+              xp: xpSemanaLiga,
+              updatedAt: serverTimestamp(),
+            });
+            ligaEnviada.current = chave;
+          } catch (e) {
+            console.warn('Não foi possível atualizar a liga:', e);
+          }
+        }
+      }
+
+      if (!verLiga || cancelado) return;
+
+      setLigaCarregando(true);
+      setLigaErro(false);
+      try {
+        const colecao = collection(db, 'ranking_semanal');
+        let snap;
+        try {
+          snap = await getDocs(query(colecao, where('semana', '==', semanaLiga), orderBy('xp', 'desc'), limit(TAMANHO_LIGA)));
+        } catch (e) {
+          // Sem o índice composto publicado: busca sem ordenar e ordena aqui.
+          console.warn('Índice da liga indisponível, ordenando no app:', e);
+          snap = await getDocs(query(colecao, where('semana', '==', semanaLiga), limit(100)));
+        }
+        if (!cancelado) setLigaEntradas(snap.docs.map((d) => d.data() as EntradaLiga));
+      } catch (e) {
+        console.error('Erro ao carregar a liga:', e);
+        if (!cancelado) setLigaErro(true);
+      } finally {
+        if (!cancelado) setLigaCarregando(false);
+      }
+    };
+
+    executar();
+    return () => {
+      cancelado = true;
+    };
+  }, [carregando, participaLiga, semanaGuardadaLiga, semanaLiga, baseLiga, xpHabitos, nomeLiga, xpSemanaLiga, verLiga]);
+
   const dicasHoje = dicasDoDia(dataHoje);
   const respostasDicas = respostasDeHoje(dados?.dicasDoDia, dataHoje);
   const resumoDicas = resumoDoDia(dicasHoje, respostasDicas);
@@ -550,6 +690,19 @@ export function useHabitos() {
     missoesResgatadas,
     resgatarMissao,
     membrosFamilia,
+    liga: {
+      participa: participaLiga,
+      semana: semanaLiga,
+      diasRestantes: diasRestantesLiga,
+      entradas: entradasLiga,
+      minhaPosicao: minhaPosicaoLiga,
+      xpSemana: xpSemanaLiga,
+      nome: nomeLiga,
+      carregando: ligaCarregando,
+      erro: ligaErro,
+    },
+    entrarNaLiga,
+    sairDaLiga,
     dicasHoje,
     respostasDicas,
     resumoDicas,

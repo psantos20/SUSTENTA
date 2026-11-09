@@ -32,10 +32,11 @@ export async function exportarMeusDados(): Promise<void> {
   const user = auth.currentUser;
   if (!user) throw new Error('Não autenticado');
 
-  const [perfil, habitos, ranking, registros] = await Promise.all([
+  const [perfil, habitos, ranking, rankingSemanal, registros] = await Promise.all([
     getDoc(doc(db, 'usuarios', user.uid)),
     getDoc(doc(db, 'habitos_usuarios', user.uid)),
     getDoc(doc(db, 'ranking_educacao', user.uid)),
+    getDoc(doc(db, 'ranking_semanal', user.uid)),
     getDocs(query(collection(db, 'registros'), where('uid', '==', user.uid))),
   ]);
 
@@ -45,6 +46,7 @@ export async function exportarMeusDados(): Promise<void> {
     perfil: perfil.data() ?? null,
     habitos: habitos.data() ?? null,
     ranking: ranking.data() ?? null,
+    rankingSemanal: rankingSemanal.data() ?? null,
     registros: registros.docs.map((d) => ({ id: d.id, ...d.data() })),
   };
 
@@ -92,6 +94,7 @@ export async function excluirConta(senha?: string): Promise<void> {
   await Promise.all([
     deleteDoc(doc(db, 'habitos_usuarios', user.uid)),
     deleteDoc(doc(db, 'ranking_educacao', user.uid)),
+    deleteDoc(doc(db, 'ranking_semanal', user.uid)),
   ]);
   await deleteDoc(doc(db, 'usuarios', user.uid));
 

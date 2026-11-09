@@ -41,6 +41,7 @@ export interface ProgressoDesafio {
 
 import type { DicasDoDia } from './dicas';
 import type { MissoesResgatadas } from './missoesFamilia';
+import type { EstadoLiga } from './liga';
 
 
 export interface DadosUsuarioHabitos {
@@ -58,4 +59,6 @@ export interface DadosUsuarioHabitos {
   dicasDoDia?: DicasDoDia;
   /** Missões da família já resgatadas nesta semana (opcional). */
   missoesFamilia?: MissoesResgatadas;
+  /** Participação na liga semanal (opcional: só quem entrou tem). */
+  liga?: EstadoLiga;
 }

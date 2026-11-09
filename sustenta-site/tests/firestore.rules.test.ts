@@ -259,6 +259,19 @@ describe('família', () => {
     await assertFails(updateDoc(doc(db(BOB), 'habitos_usuarios', ALICE), { missoesFamilia: { semana: '2026-10-19', resgatadas: [] } }));
   });
 
+  it('liga: aceita o formato esperado e rejeita lixo', async () => {
+    await seedGrupo(false);
+    const ref = doc(db(ALICE), 'habitos_usuarios', ALICE);
+    await assertSucceeds(updateDoc(ref, { liga: { participa: true, semana: '2026-10-19', base: 120 } }));
+    await assertSucceeds(updateDoc(ref, { liga: { participa: false, semana: '2026-10-19', base: 0 } }));
+    await assertFails(updateDoc(ref, { liga: 'x' }));
+    await assertFails(updateDoc(ref, { liga: { participa: 'sim', semana: '2026-10-19', base: 0 } }));
+    await assertFails(updateDoc(ref, { liga: { participa: true, semana: '19/10/2026', base: 0 } }));
+    await assertFails(updateDoc(ref, { liga: { participa: true, semana: '2026-10-19', base: -5 } }));
+    await assertFails(updateDoc(ref, { liga: { participa: true, semana: '2026-10-19', base: 0, extra: 1 } }));
+    await assertFails(updateDoc(doc(db(BOB), 'habitos_usuarios', ALICE), { liga: { participa: true, semana: '2026-10-19', base: 0 } }));
+  });
+
   it('gastos só ficam visíveis à família se o dono autorizar', async () => {
     await seedGrupo(false);
     await assertFails(getDocs(query(collection(db(BOB), 'registros'), where('uid', '==', ALICE))));
@@ -315,6 +328,22 @@ describe('ranking e cache', () => {
     await assertFails(updateDoc(doc(db(ALICE), 'ranking_educacao', ALICE), { xp: 1000000 }));
     await assertSucceeds(getDocs(collection(db(EVE), 'ranking_educacao')));
     await assertFails(getDocs(collection(anon(), 'ranking_educacao')));
+  });
+
+  it('liga semanal: lê logado, escreve e apaga só o próprio, com XP limitado', async () => {
+    const ref = doc(db(ALICE), 'ranking_semanal', ALICE);
+    const entrada = { uid: ALICE, nome: 'Alice S.', semana: '2026-10-19', xp: 80, updatedAt: serverTimestamp() };
+    await assertSucceeds(setDoc(ref, entrada));
+    await assertSucceeds(setDoc(ref, { ...entrada, xp: 200 }));
+    await assertFails(setDoc(ref, { ...entrada, xp: 5000 }));
+    await assertFails(setDoc(ref, { ...entrada, uid: BOB }));
+    await assertFails(setDoc(ref, { ...entrada, semana: '19/10/2026' }));
+    await assertFails(setDoc(ref, { ...entrada, email: 'alice@x.com' }));
+    await assertFails(setDoc(doc(db(EVE), 'ranking_semanal', ALICE), entrada));
+    await assertSucceeds(getDocs(collection(db(EVE), 'ranking_semanal')));
+    await assertFails(getDocs(collection(anon(), 'ranking_semanal')));
+    await assertFails(deleteDoc(doc(db(EVE), 'ranking_semanal', ALICE)));
+    await assertSucceeds(deleteDoc(ref));
   });
 
   it('ninguém escreve no cache de notícias', async () => {

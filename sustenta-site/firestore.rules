@@ -189,7 +189,7 @@ service cloud.firestore {
       function habitosKeys() {
         return [
           'uid', 'streak', 'maiorStreak', 'ultimoRegistro', 'diasAtivos', 'habitosPersonalizados',
-          'progressoHabitos', 'progressoDesafios', 'xpHabitos', 'dicasDoDia', 'missoesFamilia'
+          'progressoHabitos', 'progressoDesafios', 'xpHabitos', 'dicasDoDia', 'missoesFamilia', 'liga'
         ];
       }
 
@@ -209,6 +209,15 @@ service cloud.firestore {
           && x.resgatadas is list && x.resgatadas.size() <= 10;
       }
 
+      // { participa: bool, semana: 'AAAA-MM-DD' (segunda-feira), base: XP no início da semana }
+      function validLiga(x) {
+        return x is map
+          && x.keys().hasOnly(['participa', 'semana', 'base'])
+          && x.participa is bool
+          && x.semana is string && x.semana.size() == 10
+          && x.base is number && x.base >= 0 && x.base <= 100000000;
+      }
+
       function validHabitos() {
         let d = incoming();
         return (!('uid' in d) || d.uid == uid)
@@ -216,6 +225,7 @@ service cloud.firestore {
           && (!('maiorStreak' in d) || (d.maiorStreak is number && d.maiorStreak >= 0 && d.maiorStreak <= 100000))
           && (!('dicasDoDia' in d) || validDicasDoDia(d.dicasDoDia))
           && (!('missoesFamilia' in d) || validMissoesFamilia(d.missoesFamilia))
+          && (!('liga' in d) || validLiga(d.liga))
           && (!('habitosPersonalizados' in d) || (d.habitosPersonalizados is list && d.habitosPersonalizados.size() <= 50))
           && (!('progressoDesafios' in d) || (d.progressoDesafios is list && d.progressoDesafios.size() <= 100))
           && xpDeltaOk('xpHabitos', 1000);
@@ -308,6 +318,20 @@ service cloud.firestore {
         && incoming().keys().hasOnly(['uid', 'nome', 'xp', 'updatedAt'])
         && incoming().uid == uid
         && shortString(incoming().nome, 80)
+        && xpDeltaOk('xp', 1000);
+      allow delete: if isSelf(uid);
+    }
+
+    // ---------- ranking_semanal/{uid} ----------
+    // Liga da semana: público para usuários logados (só nome abreviado e XP da
+    // semana). Só entra quem quer; cada um escreve e apaga apenas o seu.
+    match /ranking_semanal/{uid} {
+      allow read: if signedIn();
+      allow create, update: if isSelf(uid)
+        && incoming().keys().hasOnly(['uid', 'nome', 'semana', 'xp', 'updatedAt'])
+        && incoming().uid == uid
+        && shortString(incoming().nome, 80)
+        && incoming().semana is string && incoming().semana.size() == 10
         && xpDeltaOk('xp', 1000);
       allow delete: if isSelf(uid);
     }

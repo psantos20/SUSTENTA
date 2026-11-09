@@ -5,6 +5,7 @@ import { ModaisHabitos } from './habits/ModaisHabitos';
 import { DesafiosTab } from './habits/DesafiosTab';
 import { DicasTab } from './habits/DicasTab';
 import { RankingTab } from './habits/RankingTab';
+import { LigaTab } from './habits/LigaTab';
 import { HabitosTab } from './habits/HabitosTab';
 import { useHabitos } from './habits/useHabitos';
 
@@ -22,7 +23,7 @@ export const HabitsPage: React.FC = () => {
 
   return (
     <div className="max-w-5xl mx-auto space-y-8 pb-8">
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+      <div className="flex flex-col xl:flex-row xl:items-end justify-between gap-6">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-slate-100">
             Ação Sustentável
@@ -32,16 +33,17 @@ export const HabitsPage: React.FC = () => {
           </p>
         </div>
 
-        <div className="flex p-1 bg-slate-100 dark:bg-slate-700 rounded-xl w-fit">
+        <div className="flex p-1 bg-slate-100 dark:bg-slate-700 rounded-xl w-fit max-w-full overflow-x-auto">
           {[
             { id: 'habitos', label: 'Checklist Diário' },
             { id: 'desafios', label: 'Desafios Mensais' },
             { id: 'dicas', label: 'Dicas do Dia' },
             { id: 'ranking', label: 'Família' },
+            { id: 'liga', label: 'Liga' },
           ].map((tab) => (
             <button
               key={tab.id}
-              onClick={() => setActiveTab(tab.id as 'habitos' | 'desafios' | 'dicas' | 'ranking')}
+              onClick={() => setActiveTab(tab.id as 'habitos' | 'desafios' | 'dicas' | 'ranking' | 'liga')}
               className={`px-4 py-2 rounded-lg font-bold text-sm whitespace-nowrap transition-all ${
                 activeTab === tab.id
                   ? 'bg-white dark:bg-slate-600 text-emerald-600 dark:text-emerald-400 shadow-sm'
@@ -69,6 +71,10 @@ export const HabitsPage: React.FC = () => {
 
         {activeTab === 'ranking' && (
 <RankingTab key="ranking" {...ctx} />
+        )}
+
+        {activeTab === 'liga' && (
+<LigaTab key="liga" {...ctx} />
         )}
       </AnimatePresence>
 
