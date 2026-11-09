@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { FileText, Download, Calendar, TrendingUp, TrendingDown, Minus, Leaf, Star, AlertTriangle, CheckCircle, ChevronDown, Loader2, Eye, BarChart2, Share2, TableProperties } from 'lucide-react';
+import { FileText, Download, Calendar, TrendingUp, TrendingDown, Minus, Leaf, Star, AlertTriangle, CheckCircle, ChevronDown, Loader2, Eye, BarChart2, Share2, Sparkles, TableProperties } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firestore';
 import { auth, db } from '../../services/firebase';
@@ -12,6 +12,9 @@ import { calcularScore, gerarMesesDisponiveis, getMesLabel, getNivel } from './r
 import { exportarCSV, gerarPDF } from './reports/exportar';
 import { CustomTooltip, DonutChart, ScoreGauge } from './reports/graficos';
 import { ReportPreview } from './reports/ReportPreview';
+import { RetrospectivaModal } from './reports/RetrospectivaModal';
+import { montarRetrospectiva } from './reports/retrospectiva';
+import { calcularCarbono } from './education/carbono';
 
 
 export default function ReportsPage() {
@@ -24,6 +27,7 @@ export default function ReportsPage() {
   const [generating, setGenerating] = useState(false);
   const [reportData, setReportData] = useState<ReportData | null>(null);
   const [previewOpen, setPreviewOpen] = useState(false);
+  const [retroAberta, setRetroAberta] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'resumo' | 'evolucao' | 'registros'>('resumo');
   const [chartMetric, setChartMetric] = useState<'total' | 'score'>('total');
@@ -243,6 +247,25 @@ export default function ReportsPage() {
     }
   }
 
+  const retrospectiva = reportData
+    ? montarRetrospectiva({
+        mes: reportData.mes,
+        mesLabel: reportData.mesLabel,
+        nome: reportData.usuario?.nome,
+        totais: {
+          energia: reportData.totalEnergia,
+          agua: reportData.totalAgua,
+          transporte: reportData.totalTransporte,
+          outro: reportData.totalOutro,
+        },
+        scoreMes: reportData.scoreMes,
+        nivel: reportData.nivel,
+        kgCO2: calcularCarbono(reportData.registros).totalKg,
+        registros: reportData.registros.length,
+        historico: reportData.historico,
+      })
+    : null;
+
   function compartilharWhatsApp() {
     if (!reportData) return;
 
@@ -392,6 +415,25 @@ export default function ReportsPage() {
           >
             <TableProperties size={15} />
             CSV
+          </motion.button>
+
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={() => setRetroAberta(true)}
+            disabled={!retrospectiva?.temDados}
+            title={reportData && !retrospectiva?.temDados ? 'Este mês não tem gastos registrados.' : undefined}
+            className={clsx(
+              'flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all',
+              retrospectiva?.temDados
+                ? 'bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-500 hover:to-fuchsia-500 text-white shadow-lg shadow-violet-900/30'
+                : darkMode
+                  ? 'bg-slate-800 text-slate-600 cursor-not-allowed border border-slate-700'
+                  : 'bg-slate-100 text-slate-400 cursor-not-allowed'
+            )}
+          >
+            <Sparkles size={15} />
+            Retrospectiva
           </motion.button>
 
           <motion.button
@@ -934,6 +976,10 @@ export default function ReportsPage() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {retroAberta && retrospectiva?.temDados && reportData && (
+        <RetrospectivaModal mes={reportData.mes} retro={retrospectiva} onFechar={() => setRetroAberta(false)} />
+      )}
 
       <AnimatePresence>
         {previewOpen && reportData && (
