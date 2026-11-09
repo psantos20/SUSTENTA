@@ -9,6 +9,7 @@ import type { Registro } from './tipos';
 import { CARBON_FACTORS, FATOR_COMBUSTIVEL, FATOR_ENERGIA_KG_POR_KWH } from './dados';
 import { calcularCarbono, classificarNivel, gerarDicaIA, getMesLabel } from './carbono';
 import { GlassCard } from './componentes';
+import { ComparadorTransporte } from './ComparadorTransporte';
 
 
 export function CarbonTab() {
@@ -479,6 +480,8 @@ export function CarbonTab() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      <ComparadorTransporte />
     </div>
   );
 }
