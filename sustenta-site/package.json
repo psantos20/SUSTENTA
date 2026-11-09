@@ -8,7 +8,7 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "test": "vitest run tests/qa.test.ts tests/rotas.test.ts tests/metas.test.ts tests/carbono.test.ts tests/ofensiva.test.ts tests/dicas.test.ts tests/medalhas.test.ts tests/missoesFamilia.test.ts tests/liga.test.ts",
+    "test": "vitest run tests/qa.test.ts tests/rotas.test.ts tests/metas.test.ts tests/carbono.test.ts tests/ofensiva.test.ts tests/dicas.test.ts tests/medalhas.test.ts tests/missoesFamilia.test.ts tests/liga.test.ts tests/projecao.test.ts",
     "test:rules": "firebase emulators:exec --only firestore --project sustenta-rules-test \"vitest run tests/firestore.rules.test.ts\""
   },
   "dependencies": {

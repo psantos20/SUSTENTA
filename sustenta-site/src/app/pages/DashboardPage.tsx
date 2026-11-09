@@ -3,8 +3,10 @@ import { Zap, Droplets, Car, Wallet, CheckCircle2, Calendar, AlertCircle, ArrowU
 import { StatCard } from '../components/dashboard/StatCard';
 import { CategoryChart } from '../components/dashboard/SustainabilityChart';
 import { MetasCard } from '../components/dashboard/MetasCard';
+import { ProjecaoCard } from '../components/dashboard/ProjecaoCard';
 import { motion } from 'motion/react';
 import { buscarRegistrosMes, buscarTodosRegistros, calcularNivel } from '../../services/consumo';
+import type { Registro } from '../../services/consumo';
 
 interface DashboardPageProps {
   onNavigate?: (page: string) => void;
@@ -184,11 +186,15 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
   // Nível/XP é acumulado: conta todos os registros, não só os do mês (igual à Sidebar e ao Perfil).
   const [totalGeral, setTotalGeral] = React.useState(0);
   const [subcategorias, setSubcategorias] = React.useState<Record<string, number>>({});
+  const [registrosMes, setRegistrosMes] = React.useState<Registro[]>([]);
+  const [todosRegistros, setTodosRegistros] = React.useState<Registro[]>([]);
+  const [historicoPronto, setHistoricoPronto] = React.useState(false);
 
   React.useEffect(() => {
     setCarregando(true);
     buscarRegistrosMes(mes).then(registros => {
       setTotalRegistros(registros.length);
+      setRegistrosMes(registros);
       setEnergia(registros.filter(r => r.categoria === 'energia').reduce((s, r) => s + r.valor, 0));
       setAgua(registros.filter(r => r.categoria === 'agua').reduce((s, r) => s + r.valor, 0));
       setTransporte(registros.filter(r => r.categoria === 'transporte').reduce((s, r) => s + r.valor, 0));
@@ -204,7 +210,10 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
   }, [mes]);
 
   React.useEffect(() => {
-    buscarTodosRegistros().then(r => setTotalGeral(r.length)).catch(() => {});
+    buscarTodosRegistros()
+      .then(r => { setTotalGeral(r.length); setTodosRegistros(r); })
+      .catch(() => {})
+      .finally(() => setHistoricoPronto(true));
   }, []);
 
   const total = energia + agua + transporte + outro;
@@ -315,6 +324,11 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
               </div>
             </div>
           </div>
+
+          {/* Projeção: só faz sentido para o mês em andamento */}
+          {mes === mesAtual && historicoPronto && (
+            <ProjecaoCard mes={mes} dia={hoje.getDate()} registrosMes={registrosMes} todosRegistros={todosRegistros} />
+          )}
 
           {/* Metas mensais por categoria */}
           <MetasCard gastos={{ energia, agua, transporte, outro }} mesLabel={mesLabel} />
