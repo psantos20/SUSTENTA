@@ -1,7 +1,7 @@
 import React from 'react';
 import {
-  LayoutDashboard, Receipt, BarChart3, CheckSquare,
-  MapPin, FileText, User, Leaf, ChevronRight,
+  House, Wallet, BarChart3, Flame,
+  MapPin, FileText, User, Leaf,
   LogOut, BookOpen, Trophy, History as HistoryIcon
 } from 'lucide-react';
 import { clsx, type ClassValue } from 'clsx';
@@ -34,25 +34,25 @@ export const Sidebar: React.FC<SidebarProps> = ({
     {
       title: 'Principal',
       items: [
-        { id: 'dashboard',   label: 'Dashboard',           icon: LayoutDashboard },
-        { id: 'consumption', label: 'Registrar Consumo',   icon: Receipt         },
-        { id: 'analysis',    label: 'Análises & Insights', icon: BarChart3       },
+        { id: 'dashboard',   label: 'Painel',   icon: House     },
+        { id: 'consumption', label: 'Gastos',   icon: Wallet    },
+        { id: 'analysis',    label: 'Análises', icon: BarChart3 },
       ],
     },
     {
       title: 'Ação e Progresso',
       items: [
-        { id: 'habits',  label: 'Hábitos e Desafios',    icon: CheckSquare },
-        { id: 'history', label: 'Histórico Inteligente', icon: HistoryIcon },
-        { id: 'map',     label: 'Mapa Sustentável',      icon: MapPin      },
+        { id: 'habits',    label: 'Hábitos',   icon: Flame       },
+        { id: 'education', label: 'Educação',  icon: BookOpen    },
+        { id: 'map',       label: 'Mapa',      icon: MapPin      },
+        { id: 'history',   label: 'Histórico', icon: HistoryIcon },
       ],
     },
     {
       title: 'Sistema',
       items: [
-        { id: 'reports',   label: 'Relatórios',         icon: FileText  },
-        { id: 'profile',   label: 'Perfil e Família',   icon: User      },
-        { id: 'education', label: 'Educação Ambiental', icon: BookOpen  },
+        { id: 'reports', label: 'Relatórios', icon: FileText },
+        { id: 'profile', label: 'Perfil',     icon: User     },
       ],
     },
   ];
@@ -65,18 +65,18 @@ export const Sidebar: React.FC<SidebarProps> = ({
     <aside className={wrapperClass}>
       {/* Logo — só no desktop */}
       {!mobile && (
-        <div className="p-6 flex items-center gap-3">
-          <div className="bg-emerald-600 p-2 rounded-xl shadow-lg shadow-emerald-200">
-            <Leaf className="text-white w-6 h-6" />
+        <div className="px-6 pt-6 pb-2 flex items-center gap-3">
+          <div className="bg-emerald-600 w-9 h-9 rounded-xl flex items-center justify-center shadow-lg shadow-emerald-200 glow-brand">
+            <Leaf className="text-white w-5 h-5" />
           </div>
-          <span className="text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">Sustenta</span>
+          <span className="font-display text-base font-semibold text-slate-900 dark:text-slate-100 tracking-wide uppercase">Sustenta</span>
         </div>
       )}
       {/* Nav */}
       <nav className="flex-1 px-4 py-4 space-y-8 overflow-y-auto">
         {menuGroups.map((group, idx) => (
           <div key={idx} className="space-y-2">
-            <h3 className="px-4 text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">
+            <h3 className="px-4 text-[11px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-widest">
               {group.title}
             </h3>
             <div className="space-y-1">
@@ -88,9 +88,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     key={item.id}
                     onClick={() => onNavigate(item.id)}
                     className={cn(
-                      'w-full flex items-center justify-between px-4 py-2.5 rounded-xl text-sm font-medium transition-all group',
+                      'w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm font-medium transition-all group',
                       isActive
-                        ? 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 shadow-sm'
+                        ? 'bg-emerald-100 dark:bg-emerald-900 text-emerald-700 dark:text-emerald-400 font-semibold'
                         : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/50 hover:text-emerald-600 dark:hover:text-emerald-400'
                     )}
                   >
@@ -103,7 +103,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       )} />
                       {item.label}
                     </div>
-                    {isActive && <ChevronRight className="w-4 h-4" />}
                   </button>
                 );
               })}
@@ -114,23 +113,23 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
       {/* Rodapé XP + logout */}
       <div className="p-4 border-t border-slate-100 dark:border-slate-700">
-        <div className="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-100 dark:border-emerald-800/40 p-4 rounded-2xl mb-4">
+        <div className="bg-emerald-100 dark:bg-emerald-900 p-4 rounded-2xl mb-4">
           <div className="flex items-center gap-3 mb-2">
-            <div className="bg-white dark:bg-slate-700 p-1.5 rounded-lg">
-              <Trophy className="w-4 h-4 text-emerald-600" />
+            <div className="bg-white dark:bg-slate-800 p-1.5 rounded-lg">
+              <Trophy className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
             </div>
-            <span className="text-xs font-bold text-emerald-800 dark:text-emerald-400">
-              Nível {nivel}: {nomeNivel}
+            <span className="text-[13px] font-semibold text-emerald-700 dark:text-emerald-400">
+              Nível {nivel} · {nomeNivel}
             </span>
           </div>
-          <div className="w-full h-1.5 bg-white dark:bg-slate-700 rounded-full overflow-hidden">
+          <div className="w-full h-2 bg-white dark:bg-slate-700 rounded-full overflow-hidden">
             <div
               className="h-full bg-emerald-500 rounded-full transition-all"
               style={{ width: `${Math.round((xpAtual / xpTotal) * 100)}%` }}
             />
           </div>
-          <p className="text-[10px] text-emerald-600 dark:text-emerald-500 mt-2 font-medium">
-            {xpAtual}/{xpTotal} XP para Nível {nivel + 1}
+          <p className="text-[11px] text-emerald-700 dark:text-emerald-400 mt-2 font-medium">
+            {xpAtual.toLocaleString('pt-BR')} / {xpTotal.toLocaleString('pt-BR')} XP
           </p>
         </div>
 

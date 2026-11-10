@@ -251,136 +251,6 @@ export function CarbonTab() {
               </p>
             </GlassCard>
 
-            <GlassCard className="p-4 space-y-2">
-              {carbono.registrosNaoCalculados > 0 && (
-                <p className="text-xs text-orange-300">
-                  {carbono.registrosNaoCalculados} registro{carbono.registrosNaoCalculados !== 1 ? 's' : ''} de
-                  transporte ficou{carbono.registrosNaoCalculados !== 1 ? 'ram' : ''} de fora do calculo: so
-                  combustivel com a quantidade informada (litros ou m3) entra no carbono. Onibus, metro,
-                  aplicativo e aviao ainda nao tem fator adotado.
-                </p>
-              )}
-
-              {carbono.registrosEstimados > 0 ? (
-                <p className="text-xs text-amber-300">
-                  Estimativa: {carbono.registrosEstimados} de {carbono.totalRegistros} registro
-                  {carbono.totalRegistros !== 1 ? 's' : ''} neste mes usa{carbono.registrosEstimados !== 1 ? 'm' : ''} o
-                  valor em reais para estimar o carbono ({carbono.estimadoKg.toFixed(1)} kg dos{' '}
-                  {carbono.totalKg.toFixed(1)} kg). Informe os kWh da conta de luz em Consumo para um
-                  calculo mais preciso.
-                </p>
-              ) : (
-                <p className="text-xs text-emerald-300">
-                  Nenhum registro deste mes depende de estimativa em reais: os calculos usam a quantidade informada.
-                </p>
-              )}
-
-              <details className="text-xs text-slate-400">
-                <summary className="cursor-pointer text-slate-300 font-medium">Como calculamos</summary>
-                <ul className="list-disc pl-5 mt-2 space-y-1.5">
-                  <li>
-                    <strong>Energia com kWh informado:</strong> kWh x {FATOR_ENERGIA_KG_POR_KWH.toLocaleString('pt-BR')} kg
-                    CO2/kWh. E a media da geracao eletrica do Brasil (SIN) em 2023, divulgada pelo MCTI
-                    (38,5 kg CO2/MWh). Em 2025 o MCTI passou a incluir mais usinas solares e eolicas e os
-                    valores mensais ficaram menores, entao este fator tende a ser conservador.
-                  </li>
-                  <li>
-                    <strong>Combustivel com quantidade informada:</strong> litros (ou m3, no GNV) x fator por
-                    unidade: gasolina {FATOR_COMBUSTIVEL.Gasolina.kg.toLocaleString('pt-BR', { maximumFractionDigits: 2 })},{' '}
-                    etanol {FATOR_COMBUSTIVEL.Etanol.kg.toLocaleString('pt-BR', { maximumFractionDigits: 3 })},{' '}
-                    diesel {FATOR_COMBUSTIVEL.Diesel.kg.toLocaleString('pt-BR', { maximumFractionDigits: 2 })} kg CO2/L e GNV{' '}
-                    {FATOR_COMBUSTIVEL.GNV.kg.toLocaleString('pt-BR', { maximumFractionDigits: 2 })} kg CO2/m3. Sao calculos
-                    do projeto a partir dos dados de 2025 da EPE/AEA, supondo gasolina com 30% de etanol (E30) e
-                    diesel com 15% de biodiesel (B15). O CO2 do etanol e do biodiesel e considerado biogenico e
-                    nao entra na conta, por isso o etanol fica perto de zero.
-                  </li>
-                  <li>
-                    <strong>Sem quantidade (estimativa):</strong> valor em R$ x fator aproximado (energia{' '}
-                    {CARBON_FACTORS.energia.toLocaleString('pt-BR')}, agua {CARBON_FACTORS.agua.toLocaleString('pt-BR')},
-                    outros {CARBON_FACTORS.outro.toLocaleString('pt-BR')} kg CO2 por real). Sao valores
-                    de referencia do projeto, sem fonte oficial: a tarifa muda de cidade para cidade.
-                  </li>
-                  <li>
-                    <strong>Agua e outros gastos:</strong> sempre estimados por enquanto (ainda nao ha fator
-                    oficial adotado para m3 de agua).
-                  </li>
-                  <li>
-                    <strong>Equivalencias</strong> (arvores, km de carro, voo) sao aproximacoes ilustrativas.
-                  </li>
-                </ul>
-              </details>
-            </GlassCard>
-
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              {[
-                { label: 'Energia', kg: carbono.energiaKg, icon: Zap, cor: 'from-amber-500 to-yellow-500' },
-                { label: 'Agua', kg: carbono.aguaKg, icon: Droplets, cor: 'from-blue-500 to-cyan-500' },
-                { label: 'Transporte', kg: carbono.transporteKg, icon: Car, cor: 'from-orange-500 to-red-500' },
-                { label: 'Outros', kg: carbono.outroKg, icon: Wind, cor: 'from-violet-500 to-indigo-500' },
-              ].map((c) => (
-                <motion.div key={c.label} whileHover={{ scale: 1.04 }}>
-                  <GlassCard className="p-4 text-center">
-                    <div
-                      className={clsx(
-                        'w-9 h-9 rounded-xl bg-gradient-to-br flex items-center justify-center mx-auto mb-2',
-                        c.cor
-                      )}
-                    >
-                      <c.icon size={16} className="text-white" />
-                    </div>
-
-                    <p className="text-xl font-black text-white">{c.kg.toFixed(1)}</p>
-                    <p className="text-[10px] text-slate-500">kg CO2</p>
-                    <p className="text-xs font-semibold text-slate-400 mt-0.5">{c.label}</p>
-                  </GlassCard>
-                </motion.div>
-              ))}
-            </div>
-
-            {historico.length > 0 && (
-              <GlassCard className="p-5 space-y-3">
-                <p className="text-xs text-slate-500 uppercase tracking-wider font-medium flex items-center gap-2">
-                  <BarChart3 size={12} /> Evolucao - ultimos 6 meses (kg CO2)
-                </p>
-
-                <ResponsiveContainer width="100%" height={200}>
-                  <BarChart data={historico} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-                    <XAxis
-                      dataKey="label"
-                      tick={{ fill: '#64748b', fontSize: 10 }}
-                      axisLine={false}
-                      tickLine={false}
-                    />
-                    <YAxis
-                      tick={{ fill: '#64748b', fontSize: 10 }}
-                      axisLine={false}
-                      tickLine={false}
-                    />
-                    <Tooltip
-                      contentStyle={{
-                        background: '#1e293b',
-                        border: '1px solid rgba(255,255,255,0.1)',
-                        borderRadius: 12,
-                        fontSize: 11,
-                      }}
-                      labelStyle={{ color: '#94a3b8' }}
-                      itemStyle={{ color: '#e2e8f0' }}
-                      formatter={(v: any) => [`${v} kg CO2`]}
-                    />
-                    <Bar dataKey="kg" radius={[6, 6, 0, 0]}>
-                      {historico.map((entry, i) => (
-                        <Cell
-                          key={i}
-                          fill={entry.label === getMesLabel(mesSel, true) ? '#22c55e' : '#334155'}
-                        />
-                      ))}
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
-              </GlassCard>
-            )}
-
             <GlassCard className="p-5 space-y-3">
               <p className="text-xs text-slate-500 uppercase tracking-wider font-medium">
                 Isso equivale a...
@@ -477,6 +347,145 @@ export function CarbonTab() {
                 ))}
               </div>
             </GlassCard>
+            <details className="group rounded-2xl border border-white/10 bg-white/5" data-testid="carbono-detalhes">
+              <summary className="cursor-pointer list-none flex items-center justify-between gap-3 p-4 text-sm font-semibold text-slate-300 hover:text-white">
+                <span>Ver detalhes: por categoria, evolução e como calculamos</span>
+                <span className="text-xs text-emerald-400 group-open:hidden">Mostrar</span>
+                <span className="text-xs text-emerald-400 hidden group-open:inline">Ocultar</span>
+              </summary>
+              <div className="space-y-4 p-4 pt-0">
+                <GlassCard className="p-4 space-y-2">
+                  {carbono.registrosNaoCalculados > 0 && (
+                    <p className="text-xs text-orange-300">
+                      {carbono.registrosNaoCalculados} registro{carbono.registrosNaoCalculados !== 1 ? 's' : ''} de
+                      transporte ficou{carbono.registrosNaoCalculados !== 1 ? 'ram' : ''} de fora do calculo: so
+                      combustivel com a quantidade informada (litros ou m3) entra no carbono. Onibus, metro,
+                      aplicativo e aviao ainda nao tem fator adotado.
+                    </p>
+                  )}
+
+                  {carbono.registrosEstimados > 0 ? (
+                    <p className="text-xs text-amber-300">
+                      Estimativa: {carbono.registrosEstimados} de {carbono.totalRegistros} registro
+                      {carbono.totalRegistros !== 1 ? 's' : ''} neste mes usa{carbono.registrosEstimados !== 1 ? 'm' : ''} o
+                      valor em reais para estimar o carbono ({carbono.estimadoKg.toFixed(1)} kg dos{' '}
+                      {carbono.totalKg.toFixed(1)} kg). Informe os kWh da conta de luz em Consumo para um
+                      calculo mais preciso.
+                    </p>
+                  ) : (
+                    <p className="text-xs text-emerald-300">
+                      Nenhum registro deste mes depende de estimativa em reais: os calculos usam a quantidade informada.
+                    </p>
+                  )}
+
+                  <details className="text-xs text-slate-400">
+                    <summary className="cursor-pointer text-slate-300 font-medium">Como calculamos</summary>
+                    <ul className="list-disc pl-5 mt-2 space-y-1.5">
+                      <li>
+                        <strong>Energia com kWh informado:</strong> kWh x {FATOR_ENERGIA_KG_POR_KWH.toLocaleString('pt-BR')} kg
+                        CO2/kWh. E a media da geracao eletrica do Brasil (SIN) em 2023, divulgada pelo MCTI
+                        (38,5 kg CO2/MWh). Em 2025 o MCTI passou a incluir mais usinas solares e eolicas e os
+                        valores mensais ficaram menores, entao este fator tende a ser conservador.
+                      </li>
+                      <li>
+                        <strong>Combustivel com quantidade informada:</strong> litros (ou m3, no GNV) x fator por
+                        unidade: gasolina {FATOR_COMBUSTIVEL.Gasolina.kg.toLocaleString('pt-BR', { maximumFractionDigits: 2 })},{' '}
+                        etanol {FATOR_COMBUSTIVEL.Etanol.kg.toLocaleString('pt-BR', { maximumFractionDigits: 3 })},{' '}
+                        diesel {FATOR_COMBUSTIVEL.Diesel.kg.toLocaleString('pt-BR', { maximumFractionDigits: 2 })} kg CO2/L e GNV{' '}
+                        {FATOR_COMBUSTIVEL.GNV.kg.toLocaleString('pt-BR', { maximumFractionDigits: 2 })} kg CO2/m3. Sao calculos
+                        do projeto a partir dos dados de 2025 da EPE/AEA, supondo gasolina com 30% de etanol (E30) e
+                        diesel com 15% de biodiesel (B15). O CO2 do etanol e do biodiesel e considerado biogenico e
+                        nao entra na conta, por isso o etanol fica perto de zero.
+                      </li>
+                      <li>
+                        <strong>Sem quantidade (estimativa):</strong> valor em R$ x fator aproximado (energia{' '}
+                        {CARBON_FACTORS.energia.toLocaleString('pt-BR')}, agua {CARBON_FACTORS.agua.toLocaleString('pt-BR')},
+                        outros {CARBON_FACTORS.outro.toLocaleString('pt-BR')} kg CO2 por real). Sao valores
+                        de referencia do projeto, sem fonte oficial: a tarifa muda de cidade para cidade.
+                      </li>
+                      <li>
+                        <strong>Agua e outros gastos:</strong> sempre estimados por enquanto (ainda nao ha fator
+                        oficial adotado para m3 de agua).
+                      </li>
+                      <li>
+                        <strong>Equivalencias</strong> (arvores, km de carro, voo) sao aproximacoes ilustrativas.
+                      </li>
+                    </ul>
+                  </details>
+                </GlassCard>
+
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  {[
+                    { label: 'Energia', kg: carbono.energiaKg, icon: Zap, cor: 'from-amber-500 to-yellow-500' },
+                    { label: 'Agua', kg: carbono.aguaKg, icon: Droplets, cor: 'from-blue-500 to-cyan-500' },
+                    { label: 'Transporte', kg: carbono.transporteKg, icon: Car, cor: 'from-orange-500 to-red-500' },
+                    { label: 'Outros', kg: carbono.outroKg, icon: Wind, cor: 'from-violet-500 to-indigo-500' },
+                  ].map((c) => (
+                    <motion.div key={c.label} whileHover={{ scale: 1.04 }}>
+                      <GlassCard className="p-4 text-center">
+                        <div
+                          className={clsx(
+                            'w-9 h-9 rounded-xl bg-gradient-to-br flex items-center justify-center mx-auto mb-2',
+                            c.cor
+                          )}
+                        >
+                          <c.icon size={16} className="text-white" />
+                        </div>
+
+                        <p className="text-xl font-black text-white">{c.kg.toFixed(1)}</p>
+                        <p className="text-[10px] text-slate-500">kg CO2</p>
+                        <p className="text-xs font-semibold text-slate-400 mt-0.5">{c.label}</p>
+                      </GlassCard>
+                    </motion.div>
+                  ))}
+                </div>
+
+                {historico.length > 0 && (
+                  <GlassCard className="p-5 space-y-3">
+                    <p className="text-xs text-slate-500 uppercase tracking-wider font-medium flex items-center gap-2">
+                      <BarChart3 size={12} /> Evolucao - ultimos 6 meses (kg CO2)
+                    </p>
+
+                    <ResponsiveContainer width="100%" height={200}>
+                      <BarChart data={historico} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
+                        <XAxis
+                          dataKey="label"
+                          tick={{ fill: '#7a9585', fontSize: 10 }}
+                          axisLine={false}
+                          tickLine={false}
+                        />
+                        <YAxis
+                          tick={{ fill: '#7a9585', fontSize: 10 }}
+                          axisLine={false}
+                          tickLine={false}
+                        />
+                        <Tooltip
+                          contentStyle={{
+                            background: '#0f1f18',
+                            border: '1px solid rgba(255,255,255,0.1)',
+                            borderRadius: 12,
+                            fontSize: 11,
+                          }}
+                          labelStyle={{ color: '#8fa89a' }}
+                          itemStyle={{ color: '#e9f5ee' }}
+                          formatter={(v: any) => [`${v} kg CO2`]}
+                        />
+                        <Bar dataKey="kg" radius={[6, 6, 0, 0]}>
+                          {historico.map((entry, i) => (
+                            <Cell
+                              key={i}
+                              fill={entry.label === getMesLabel(mesSel, true) ? '#6ee7a8' : '#1f3328'}
+                            />
+                          ))}
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </GlassCard>
+                )}
+
+              </div>
+            </details>
           </motion.div>
         )}
       </AnimatePresence>

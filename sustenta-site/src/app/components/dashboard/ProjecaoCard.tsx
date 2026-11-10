@@ -3,9 +3,10 @@ import { TrendingUp, TrendingDown, Zap, Droplets, Car, Wallet, Leaf, Info, Loade
 import type { Registro } from '../../../services/consumo';
 import { buscarMetas, calcularProgresso } from '../../../services/metas';
 import type { Metas, StatusMeta } from '../../../services/metas';
-import { CATEGORIAS_PROJECAO, TIPO_CATEGORIA, diasDoMes, projetarCategoria, projetarMes } from '../../../services/projecao';
+import { CATEGORIAS_PROJECAO, TIPO_CATEGORIA } from '../../../services/projecao';
 import type { CategoriaProjecao } from '../../../services/projecao';
-import { calcularCarbono, classificarNivel, getMesLabel } from '../../pages/education/carbono';
+import { getMesLabel } from '../../pages/education/carbono';
+import { calcularDadosProjecao } from './dadosProjecao';
 
 interface ProjecaoCardProps {
   /** Mês exibido ("AAAA-MM"). O card só faz sentido para o mês em andamento. */
@@ -29,13 +30,6 @@ const TEXTO_STATUS: Record<StatusMeta, string> = {
 const brl = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 const kg = (v: number) => `${v.toLocaleString('pt-BR', { maximumFractionDigits: 1 })} kg`;
 
-const somaPorCategoria = (registros: Registro[]): Record<CategoriaProjecao, number> => ({
-  energia: registros.filter((r) => r.categoria === 'energia').reduce((s, r) => s + r.valor, 0),
-  agua: registros.filter((r) => r.categoria === 'agua').reduce((s, r) => s + r.valor, 0),
-  transporte: registros.filter((r) => r.categoria === 'transporte').reduce((s, r) => s + r.valor, 0),
-  outro: registros.filter((r) => r.categoria === 'outro').reduce((s, r) => s + r.valor, 0),
-});
-
 export const ProjecaoCard: React.FC<ProjecaoCardProps> = ({ mes, dia, registrosMes, todosRegistros }) => {
   const [metas, setMetas] = React.useState<Metas>({});
   const [metasProntas, setMetasProntas] = React.useState(false);
@@ -49,50 +43,10 @@ export const ProjecaoCard: React.FC<ProjecaoCardProps> = ({ mes, dia, registrosM
     return () => { ativo = false; };
   }, []);
 
-  const dados = React.useMemo(() => {
-    const diasNoMes = diasDoMes(mes);
-
-    // Histórico: só meses anteriores ao exibido, do mais antigo ao mais recente.
-    const porMes = new Map<string, Registro[]>();
-    for (const r of todosRegistros) {
-      if (r.mes < mes) porMes.set(r.mes, [...(porMes.get(r.mes) ?? []), r]);
-    }
-    const mesesAnteriores = [...porMes.keys()].sort();
-
-    const gastoPorMes = mesesAnteriores.map((m) => somaPorCategoria(porMes.get(m)!));
-    const carbonoPorMes = mesesAnteriores.map((m) => calcularCarbono(porMes.get(m)!));
-
-    const historicoGasto = {} as Record<CategoriaProjecao, number[]>;
-    const historicoKg = {} as Record<CategoriaProjecao, number[]>;
-    for (const cat of CATEGORIAS_PROJECAO) {
-      historicoGasto[cat] = gastoPorMes.map((g) => g[cat]);
-      historicoKg[cat] = carbonoPorMes.map((c) => c[`${cat}Kg` as 'energiaKg' | 'aguaKg' | 'transporteKg' | 'outroKg']);
-    }
-
-    const gastoAtual = somaPorCategoria(registrosMes);
-    const projecao = projetarMes(gastoAtual, historicoGasto, dia, diasNoMes);
-
-    // CO₂ com a mesma regra de cada categoria.
-    const carbonoAtual = calcularCarbono(registrosMes);
-    const kgAtual: Record<CategoriaProjecao, number> = {
-      energia: carbonoAtual.energiaKg,
-      agua: carbonoAtual.aguaKg,
-      transporte: carbonoAtual.transporteKg,
-      outro: carbonoAtual.outroKg,
-    };
-    const kgProjetado = CATEGORIAS_PROJECAO.reduce(
-      (s, cat) => s + projetarCategoria(TIPO_CATEGORIA[cat], kgAtual[cat], historicoKg[cat], dia, diasNoMes).valor,
-      0
-    );
-
-    const mesAnterior = mesesAnteriores[mesesAnteriores.length - 1] ?? null;
-    const totalMesAnterior = gastoPorMes.length > 0
-      ? CATEGORIAS_PROJECAO.reduce((s, cat) => s + gastoPorMes[gastoPorMes.length - 1][cat], 0)
-      : 0;
-    const nivelCarbono = classificarNivel(kgProjetado, carbonoPorMes.map((c) => c.totalKg));
-
-    return { diasNoMes, projecao, gastoAtual, kgProjetado, mesAnterior, totalMesAnterior, nivelCarbono, temHistorico: mesesAnteriores.length > 0, naoCalculados: carbonoAtual.registrosNaoCalculados };
-  }, [mes, dia, registrosMes, todosRegistros]);
+  const dados = React.useMemo(
+    () => calcularDadosProjecao(mes, dia, registrosMes, todosRegistros),
+    [mes, dia, registrosMes, todosRegistros]
+  );
 
   const { diasNoMes, projecao, gastoAtual, kgProjetado, mesAnterior, totalMesAnterior, nivelCarbono } = dados;
   const diferenca = mesAnterior && totalMesAnterior > 0 ? projecao.total - totalMesAnterior : null;
@@ -102,7 +56,7 @@ export const ProjecaoCard: React.FC<ProjecaoCardProps> = ({ mes, dia, registrosM
     <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm space-y-5" data-testid="projecao-card">
       <div className="flex items-start justify-between gap-4">
         <div className="flex items-center gap-3">
-          <div className="bg-indigo-50 dark:bg-indigo-900/20 p-2.5 rounded-xl text-indigo-600 dark:text-indigo-400">
+          <div className="bg-emerald-100 dark:bg-emerald-900 p-2.5 rounded-xl text-emerald-700 dark:text-emerald-400">
             <TrendingUp className="w-5 h-5" />
           </div>
           <div>
@@ -113,7 +67,7 @@ export const ProjecaoCard: React.FC<ProjecaoCardProps> = ({ mes, dia, registrosM
       </div>
 
       <div className="w-full h-1.5 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden" aria-hidden="true">
-        <div className="h-full bg-indigo-400 rounded-full" style={{ width: `${percentualMes}%` }} />
+        <div className="h-full bg-emerald-500 rounded-full" style={{ width: `${percentualMes}%` }} />
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

@@ -93,9 +93,9 @@ export function TabBtn({
       onClick={onClick}
       whileTap={{ scale: 0.96 }}
       className={clsx(
-        'relative flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all whitespace-nowrap',
+        'relative flex items-center gap-2 px-4 py-2.5 rounded-full text-sm font-semibold transition-all whitespace-nowrap',
         active
-          ? 'bg-gradient-to-r from-emerald-600 to-green-600 text-white shadow-lg shadow-emerald-900/40'
+          ? 'bg-emerald-600 text-white shadow-sm'
           : 'text-slate-400 hover:text-white hover:bg-white/10'
       )}
     >
@@ -140,7 +140,7 @@ export function DesafioCard({
       initial={{ opacity: 0, y: -8 }}
       animate={{ opacity: 1, y: 0 }}
       className={clsx(
-        'rounded-2xl border p-5 backdrop-blur-sm relative overflow-hidden',
+        'edu-soft rounded-2xl border p-5 backdrop-blur-sm relative overflow-hidden',
         desafio.cor,
         desafio.border
       )}

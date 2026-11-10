@@ -125,7 +125,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
       />
 
       <div className="lg:pl-64 flex flex-col min-h-screen">
-        <header className="sticky top-0 z-40 h-16 bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 px-4 md:px-8 flex items-center justify-between transition-colors duration-300">
+        <header className="sticky top-0 z-40 h-16 bg-white/85 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-700 px-4 md:px-8 flex items-center justify-between transition-colors duration-300">
           <div className="flex items-center gap-4">
             <button
               className="lg:hidden p-2 text-slate-600 dark:text-slate-300"
@@ -135,7 +135,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
             </button>
 
             <div className="hidden md:block relative">
-              <div className="flex items-center gap-3 bg-slate-100 dark:bg-slate-700 px-4 py-2 rounded-xl transition-colors">
+              <div className="flex items-center gap-3 bg-slate-100 dark:bg-slate-800 border border-transparent dark:border-slate-700 px-4 py-2 rounded-full transition-colors focus-within:border-emerald-600 dark:focus-within:border-emerald-400">
                 <Search className="w-4 h-4 text-slate-400" />
                 <input
                   type="text"
@@ -293,14 +293,14 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
                 <p className="text-xs font-bold text-slate-900 dark:text-slate-100">
                   {nomeUsuario || 'Meu Perfil'}
                 </p>
-                <p className="text-xs font-bold text-emerald-600 uppercase tracking-widest">
+                <p className="text-xs font-bold text-emerald-700 dark:text-emerald-400 uppercase tracking-widest">
                   {nomeNivel || 'Iniciante'}
                 </p>
               </div>
 
-              <div className="w-10 h-10 rounded-xl bg-emerald-600 flex items-center justify-center border-2 border-white dark:border-slate-700 shadow-sm">
+              <div className="w-10 h-10 rounded-full bg-emerald-600 flex items-center justify-center shadow-sm">
                 {iniciaisUsuario ? (
-                  <span className="text-white text-sm font-black">{iniciaisUsuario}</span>
+                  <span className="text-white text-sm font-black font-display">{iniciaisUsuario}</span>
                 ) : (
                   <Leaf className="w-5 h-5 text-white" />
                 )}

@@ -35,22 +35,22 @@ interface Ecoponto {
 interface RotaInfo { distancia: string; duracao: string; passos: string[]; }
 
 const MAPA_ESTILO_ESCURO = [
-  { elementType: 'geometry',          stylers: [{ color: '#0a0f1a' }] },
+  { elementType: 'geometry',          stylers: [{ color: '#07120e' }] },
   { elementType: 'labels.text.fill',  stylers: [{ color: '#4a5568' }] },
-  { elementType: 'labels.text.stroke',stylers: [{ color: '#0a0f1a' }] },
-  { featureType: 'administrative',    elementType: 'geometry.stroke', stylers: [{ color: '#1a2535' }] },
-  { featureType: 'landscape',         elementType: 'geometry',        stylers: [{ color: '#0d1520' }] },
-  { featureType: 'poi',               elementType: 'geometry',        stylers: [{ color: '#0d1520' }] },
+  { elementType: 'labels.text.stroke',stylers: [{ color: '#07120e' }] },
+  { featureType: 'administrative',    elementType: 'geometry.stroke', stylers: [{ color: '#1f3328' }] },
+  { featureType: 'landscape',         elementType: 'geometry',        stylers: [{ color: '#0f1f18' }] },
+  { featureType: 'poi',               elementType: 'geometry',        stylers: [{ color: '#0f1f18' }] },
   { featureType: 'poi',               elementType: 'labels.text.fill',stylers: [{ color: '#2d7a4f' }] },
-  { featureType: 'poi.park',          elementType: 'geometry',        stylers: [{ color: '#0d2318' }] },
+  { featureType: 'poi.park',          elementType: 'geometry',        stylers: [{ color: '#143a28' }] },
   { featureType: 'poi.park',          elementType: 'labels.text.fill',stylers: [{ color: '#1a5c36' }] },
-  { featureType: 'road',              elementType: 'geometry',        stylers: [{ color: '#1a2535' }] },
-  { featureType: 'road',              elementType: 'geometry.stroke', stylers: [{ color: '#0d1520' }] },
+  { featureType: 'road',              elementType: 'geometry',        stylers: [{ color: '#1f3328' }] },
+  { featureType: 'road',              elementType: 'geometry.stroke', stylers: [{ color: '#0f1f18' }] },
   { featureType: 'road',              elementType: 'labels.text.fill',stylers: [{ color: '#3a4a5c' }] },
   { featureType: 'road.highway',      elementType: 'geometry',        stylers: [{ color: '#1e3a2f' }] },
-  { featureType: 'road.highway',      elementType: 'geometry.stroke', stylers: [{ color: '#0d2318' }] },
+  { featureType: 'road.highway',      elementType: 'geometry.stroke', stylers: [{ color: '#143a28' }] },
   { featureType: 'road.highway',      elementType: 'labels.text.fill',stylers: [{ color: '#2d7a4f' }] },
-  { featureType: 'transit',           elementType: 'geometry',        stylers: [{ color: '#0d1520' }] },
+  { featureType: 'transit',           elementType: 'geometry',        stylers: [{ color: '#0f1f18' }] },
   { featureType: 'water',             elementType: 'geometry',        stylers: [{ color: '#060d14' }] },
   { featureType: 'water',             elementType: 'labels.text.fill',stylers: [{ color: '#1a3a4a' }] },
 ];
@@ -265,7 +265,7 @@ export const MapPage: React.FC = () => {
       center: { lat: -14.235, lng: -51.925 }, zoom: 4,
       styles: MAPA_ESTILO_ESCURO, disableDefaultUI: true,
       zoomControl: true, zoomControlOptions: { position: window.google.maps.ControlPosition.RIGHT_BOTTOM },
-      gestureHandling: 'greedy', backgroundColor: '#0a0f1a',
+      gestureHandling: 'greedy', backgroundColor: '#07120e',
     });
     infoWindowRef.current = new window.google.maps.InfoWindow();
     direcaoRef.current    = new window.google.maps.DirectionsRenderer({
@@ -318,7 +318,7 @@ export const MapPage: React.FC = () => {
     g.selectAll<SVGPathElement, GeoJSON.Feature>('path.estado').data(geoData.features).join('path').attr('class', 'estado')
       .attr('d', d => pathGen(d) ?? '')
       .attr('fill', d => { const { sigla } = d.properties as any; if (sigla === estadoAtivo) return '#10b981'; if (sigla === meuEstado) return '#0d9488'; return estadosInfo[sigla]?.corHex || '#1e293b'; })
-      .attr('stroke', '#0a0f1a').attr('stroke-width', 0.7)
+      .attr('stroke', '#07120e').attr('stroke-width', 0.7)
       .attr('filter', d => (d.properties as any).sigla === estadoAtivo ? 'url(#glow-mini)' : 'none')
       .style('cursor', 'pointer').style('opacity', 0).transition().duration(600).delay((_, i) => i * 12).style('opacity', 1);
     g.selectAll<SVGPathElement, GeoJSON.Feature>('path.hit').data(geoData.features).join('path').attr('class', 'hit')
@@ -526,9 +526,9 @@ export const MapPage: React.FC = () => {
     const marker = marcadoresRef.current.get(place_id);
     if (infoWindowRef.current && marker) {
       infoWindowRef.current.setContent(`
-        <div style="background:#0d1520;color:#e2e8f0;padding:10px 14px;border-radius:10px;font-family:system-ui;min-width:160px;border:1px solid rgba(16,185,129,0.3)">
+        <div style="background:#0f1f18;color:#e9f5ee;padding:10px 14px;border-radius:10px;font-family:system-ui;min-width:160px;border:1px solid rgba(16,185,129,0.3)">
           <p style="font-weight:800;font-size:13px;margin:0 0 4px;color:#34d399">${eco.name}</p>
-          <p style="font-size:11px;margin:0;color:#94a3b8">${eco.vicinity}</p>
+          <p style="font-size:11px;margin:0;color:#8fa89a">${eco.vicinity}</p>
           <div style="display:flex;gap:8px;margin-top:6px">
             ${eco.distancia != null ? `<span style="font-size:11px;color:#10b981;font-weight:700">📍 ${eco.distancia} km</span>` : ''}
             ${eco.duracao ? `<span style="font-size:11px;color:#10b981;font-weight:700">⏱ ${eco.duracao}</span>` : ''}
@@ -628,7 +628,7 @@ export const MapPage: React.FC = () => {
           {[{ cor: '#10b981', label: '>=85' }, { cor: '#22c55e', label: '>=75' }, { cor: '#84cc16', label: '>=65' }, { cor: '#eab308', label: '>=55' }, { cor: '#ef4444', label: '<55' }].map(item => (
             <div key={item.label} className="flex items-center gap-1">
               <div className="w-2 h-2 rounded-full" style={{ background: item.cor }} />
-              <span style={{ fontSize: 9, color: '#64748b', fontWeight: 700 }}>{item.label}</span>
+              <span style={{ fontSize: 9, color: '#7a9585', fontWeight: 700 }}>{item.label}</span>
             </div>
           ))}
         </div>
@@ -645,7 +645,7 @@ export const MapPage: React.FC = () => {
           ] as const).map(aba => (
             <button key={aba.id} onClick={() => { setAbaPainel(aba.id); setPainelAberto(true); }}
               className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-bold transition-all"
-              style={abaPainel === aba.id ? { background: 'rgba(16,185,129,0.9)', color: '#fff' } : { color: '#64748b' }}>
+              style={abaPainel === aba.id ? { background: 'rgba(16,185,129,0.9)', color: '#fff' } : { color: '#7a9585' }}>
               <aba.icon className="w-3.5 h-3.5" />{aba.label}
             </button>
           ))}
@@ -693,7 +693,7 @@ export const MapPage: React.FC = () => {
                               <h3 className="text-lg font-black text-white">{estadoAtivoInfo.nome}</h3>
                               <p className="text-xs text-slate-500 mt-0.5">#{rankingEstados.findIndex(e => e.sigla === estadoAtivo) + 1} no ranking</p>
                             </div>
-                            <button onClick={() => setEstadoAtivo(null)} className="p-1.5 rounded-lg hover:bg-white/10" style={{ color: '#64748b' }}><X className="w-4 h-4" /></button>
+                            <button onClick={() => setEstadoAtivo(null)} className="p-1.5 rounded-lg hover:bg-white/10" style={{ color: '#7a9585' }}><X className="w-4 h-4" /></button>
                           </div>
                           <div className="rounded-2xl p-4 text-center" style={{ background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.2)' }}>
                             <p className="text-[10px] font-bold text-emerald-500 uppercase tracking-widest mb-2">Score</p>
@@ -750,7 +750,7 @@ export const MapPage: React.FC = () => {
                               <input type="text" value={buscaEco} onChange={e => setBuscaEco(e.target.value)}
                                 placeholder={`Buscar nos ${ecopontos.length} ecopontos...`}
                                 className="w-full pl-8 pr-4 py-2 rounded-xl text-xs focus:outline-none focus:ring-1 focus:ring-emerald-500 placeholder:text-slate-600"
-                                style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)', color: '#e2e8f0' }} />
+                                style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)', color: '#e9f5ee' }} />
                             </div>
                           </div>
 
@@ -776,16 +776,16 @@ export const MapPage: React.FC = () => {
                                     <Icon className="w-4 h-4 text-emerald-400" />
                                   </div>
                                   <div className="flex-1 min-w-0">
-                                    <p className="text-xs font-bold truncate" style={{ color: ativo ? '#34d399' : '#e2e8f0' }}>{eco.name}</p>
-                                    <p className="text-[10px] truncate mt-0.5" style={{ color: '#64748b' }}>{eco.vicinity}</p>
+                                    <p className="text-xs font-bold truncate" style={{ color: ativo ? '#34d399' : '#e9f5ee' }}>{eco.name}</p>
+                                    <p className="text-[10px] truncate mt-0.5" style={{ color: '#7a9585' }}>{eco.vicinity}</p>
                                     <div className="flex items-center gap-2 mt-1.5 flex-wrap">
                                       <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.2)', color: '#34d399' }}>{label}</span>
                                       {eco.distancia != null && <span className="text-[10px] font-bold" style={{ color: '#10b981' }}>📍 {eco.distancia} km</span>}
-                                      {eco.duracao && <span className="flex items-center gap-0.5 text-[10px] font-bold" style={{ color: '#94a3b8' }}><Clock className="w-2.5 h-2.5" /> {eco.duracao}</span>}
+                                      {eco.duracao && <span className="flex items-center gap-0.5 text-[10px] font-bold" style={{ color: '#8fa89a' }}><Clock className="w-2.5 h-2.5" /> {eco.duracao}</span>}
                                       {eco.rating && <span className="flex items-center gap-0.5 text-[10px] font-bold text-amber-400"><Star className="w-2.5 h-2.5" />{eco.rating}</span>}
                                     </div>
                                   </div>
-                                  <Route className="w-4 h-4 shrink-0 mt-1 transition-colors" style={{ color: ativo ? '#10b981' : '#334155' }} />
+                                  <Route className="w-4 h-4 shrink-0 mt-1 transition-colors" style={{ color: ativo ? '#10b981' : '#2a4436' }} />
                                 </button>
                               );
                             })}
@@ -801,7 +801,7 @@ export const MapPage: React.FC = () => {
                                       <Route className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
                                       <p className="text-xs font-black text-emerald-300 truncate">{ecopontoAtivo.name}</p>
                                     </div>
-                                    <button onClick={limparRota} className="ml-2 shrink-0" style={{ color: '#64748b' }}><X className="w-3.5 h-3.5" /></button>
+                                    <button onClick={limparRota} className="ml-2 shrink-0" style={{ color: '#7a9585' }}><X className="w-3.5 h-3.5" /></button>
                                   </div>
                                   {loadingRota ? (
                                     <div className="flex items-center gap-2 text-xs text-emerald-400"><Loader2 className="w-3.5 h-3.5 animate-spin" /> Calculando rota...</div>
@@ -845,7 +845,7 @@ export const MapPage: React.FC = () => {
                             className="w-full flex items-center gap-3 px-4 py-3 text-left transition-all"
                             style={{ borderBottom: '1px solid rgba(255,255,255,0.04)', background: est.sigla === estadoAtivo ? 'rgba(16,185,129,0.1)' : est.sigla === meuEstado ? 'rgba(13,148,136,0.08)' : 'transparent' }}>
                             <div className="w-7 h-7 rounded-lg flex items-center justify-center text-xs font-black shrink-0"
-                              style={{ background: i === 0 ? 'rgba(251,191,36,0.15)' : i === 1 ? 'rgba(148,163,184,0.1)' : i === 2 ? 'rgba(251,146,60,0.15)' : 'rgba(255,255,255,0.05)', color: i === 0 ? '#fbbf24' : i === 1 ? '#94a3b8' : i === 2 ? '#fb923c' : '#475569' }}>
+                              style={{ background: i === 0 ? 'rgba(251,191,36,0.15)' : i === 1 ? 'rgba(148,163,184,0.1)' : i === 2 ? 'rgba(251,146,60,0.15)' : 'rgba(255,255,255,0.05)', color: i === 0 ? '#fbbf24' : i === 1 ? '#8fa89a' : i === 2 ? '#fb923c' : '#475569' }}>
                               {i < 3 ? ['🥇', '🥈', '🥉'][i] : i + 1}
                             </div>
                             <div className="flex-1 min-w-0">
@@ -860,7 +860,7 @@ export const MapPage: React.FC = () => {
                                 <span className={`text-[10px] font-black shrink-0 ${scoreColor(est.score)}`}>{est.score}</span>
                               </div>
                             </div>
-                            <ChevronRight className="w-3.5 h-3.5 shrink-0" style={{ color: '#334155' }} />
+                            <ChevronRight className="w-3.5 h-3.5 shrink-0" style={{ color: '#2a4436' }} />
                           </button>
                         ))}
                       </div>

@@ -8,7 +8,7 @@ interface PrivacidadePageProps {
 const secoes = [
   {
     icon: Database,
-    cor: 'text-blue-600 bg-blue-50',
+    cor: 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20',
     titulo: '1. Dados que coletamos',
     conteudo: `Coletamos apenas os dados necessários para oferecer a melhor experiência no Sustenta:
 
@@ -26,7 +26,7 @@ Não coletamos dados de localização em tempo real, informações financeiras c
   },
   {
     icon: Eye,
-    cor: 'text-emerald-600 bg-emerald-50',
+    cor: 'text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/30',
     titulo: '2. Como usamos seus dados',
     conteudo: `Seus dados são utilizados exclusivamente para:
 
@@ -62,7 +62,7 @@ Todos os nossos parceiros de tecnologia seguem políticas de privacidade compat�
   },
   {
     icon: Lock,
-    cor: 'text-amber-600 bg-amber-50',
+    cor: 'text-amber-600 bg-amber-50 dark:bg-amber-900/20',
     titulo: '4. Segurança dos dados',
     conteudo: `Adotamos as melhores práticas de segurança para proteger suas informações:
 
@@ -102,7 +102,7 @@ Para exercer qualquer um desses direitos, entre em contato pelo e-mail: privacid
   },
   {
     icon: Trash2,
-    cor: 'text-red-600 bg-red-50',
+    cor: 'text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20',
     titulo: '6. Retenção e exclusão de dados',
     conteudo: `Mantemos seus dados pelo tempo necessário para prestar os serviços contratados ou enquanto sua conta estiver ativa.
 
@@ -122,13 +122,13 @@ export const PrivacidadePage: React.FC<PrivacidadePageProps> = ({ onVoltar }) =>
   const [aberta, setAberta] = useState<number | null>(0);
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100">
 
       {/* Header */}
-      <header className="bg-white border-b border-slate-200 px-6 py-4 flex items-center gap-4 sticky top-0 z-10">
+      <header className="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 px-6 py-4 flex items-center gap-4 sticky top-0 z-10">
         <button
           onClick={onVoltar}
-          className="flex items-center gap-2 text-slate-500 hover:text-emerald-600 transition-colors text-sm font-medium"
+          className="flex items-center gap-2 text-slate-500 dark:text-slate-400 hover:text-emerald-600 transition-colors text-sm font-medium"
         >
           <ArrowLeft className="w-4 h-4" />
           Voltar
@@ -138,7 +138,7 @@ export const PrivacidadePage: React.FC<PrivacidadePageProps> = ({ onVoltar }) =>
           <div className="bg-emerald-600 p-1.5 rounded-lg">
             <Leaf className="text-white w-4 h-4" />
           </div>
-          <span className="font-bold text-slate-900">Sustenta</span>
+          <span className="font-bold text-slate-900 dark:text-slate-100">Sustenta</span>
         </div>
       </header>
 
@@ -159,7 +159,7 @@ export const PrivacidadePage: React.FC<PrivacidadePageProps> = ({ onVoltar }) =>
       <div className="max-w-3xl mx-auto px-6 py-16 space-y-6">
 
         {/* Intro */}
-        <div className="bg-blue-50 border border-blue-100 rounded-2xl p-6">
+        <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-100 rounded-2xl p-6">
           <p className="text-blue-800 text-sm leading-relaxed">
             Esta Política de Privacidade descreve como o <strong>Sustenta</strong> coleta, usa, armazena e protege suas informações pessoais, em conformidade com a <strong>Lei Geral de Proteção de Dados (LGPD — Lei 13.709/2018)</strong>. Ao utilizar nossa plataforma, você concorda com as práticas descritas neste documento.
           </p>
@@ -171,15 +171,15 @@ export const PrivacidadePage: React.FC<PrivacidadePageProps> = ({ onVoltar }) =>
             const Icon = secao.icon;
             const estaAberta = aberta === i;
             return (
-              <div key={i} className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+              <div key={i} className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm overflow-hidden">
                 <button
                   onClick={() => setAberta(estaAberta ? null : i)}
-                  className="w-full flex items-center gap-4 p-5 text-left hover:bg-slate-50 transition-colors"
+                  className="w-full flex items-center gap-4 p-5 text-left hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors"
                 >
                   <div className={`shrink-0 p-2.5 rounded-xl ${secao.cor}`}>
                     <Icon className="w-4 h-4" />
                   </div>
-                  <span className="flex-1 font-bold text-slate-900 text-sm">{secao.titulo}</span>
+                  <span className="flex-1 font-bold text-slate-900 dark:text-slate-100 text-sm">{secao.titulo}</span>
                   {estaAberta
                     ? <ChevronUp className="w-4 h-4 text-slate-400 shrink-0" />
                     : <ChevronDown className="w-4 h-4 text-slate-400 shrink-0" />
@@ -187,7 +187,7 @@ export const PrivacidadePage: React.FC<PrivacidadePageProps> = ({ onVoltar }) =>
                 </button>
                 {estaAberta && (
                   <div className="px-5 pb-5 border-t border-slate-50">
-                    <p className="text-sm text-slate-500 leading-relaxed whitespace-pre-line pt-4">
+                    <p className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed whitespace-pre-line pt-4">
                       {secao.conteudo}
                     </p>
                   </div>
@@ -207,7 +207,7 @@ export const PrivacidadePage: React.FC<PrivacidadePageProps> = ({ onVoltar }) =>
           <a href="mailto:privacidade@sustenta.app" className="text-emerald-400 font-semibold hover:underline">
             privacidade@sustenta.app
           </a>
-          <p className="text-slate-500 text-xs mt-4">
+          <p className="text-slate-500 dark:text-slate-400 text-xs mt-4">
             Respondemos em até 15 dias úteis, conforme exigido pela LGPD.
           </p>
         </div>
@@ -215,7 +215,7 @@ export const PrivacidadePage: React.FC<PrivacidadePageProps> = ({ onVoltar }) =>
       </div>
 
       {/* Footer */}
-      <footer className="border-t border-slate-200 py-8 text-center text-slate-400 text-sm">
+      <footer className="border-t border-slate-200 dark:border-slate-700 py-8 text-center text-slate-400 text-sm">
         <p>© 2026 Sustenta — Gestão Inteligente de Consumo e Sustentabilidade</p>
       </footer>
     </div>

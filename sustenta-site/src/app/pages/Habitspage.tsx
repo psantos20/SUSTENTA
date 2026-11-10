@@ -23,7 +23,7 @@ export const HabitsPage: React.FC = () => {
 
   return (
     <div className="max-w-5xl mx-auto space-y-8 pb-8">
-      <div className="flex flex-col xl:flex-row xl:items-end justify-between gap-6">
+      <div className="flex flex-col 2xl:flex-row 2xl:items-end justify-between gap-6">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-slate-100">
             Ação Sustentável
@@ -33,7 +33,7 @@ export const HabitsPage: React.FC = () => {
           </p>
         </div>
 
-        <div className="flex p-1 bg-slate-100 dark:bg-slate-700 rounded-xl w-fit max-w-full overflow-x-auto">
+        <div className="flex p-1 gap-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-full w-fit max-w-full overflow-x-auto">
           {[
             { id: 'habitos', label: 'Checklist Diário' },
             { id: 'desafios', label: 'Desafios Mensais' },
@@ -44,9 +44,9 @@ export const HabitsPage: React.FC = () => {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id as 'habitos' | 'desafios' | 'dicas' | 'ranking' | 'liga')}
-              className={`px-4 py-2 rounded-lg font-bold text-sm whitespace-nowrap transition-all ${
+              className={`px-4 py-2 rounded-full font-semibold text-sm whitespace-nowrap transition-all ${
                 activeTab === tab.id
-                  ? 'bg-white dark:bg-slate-600 text-emerald-600 dark:text-emerald-400 shadow-sm'
+                  ? 'bg-emerald-600 text-white shadow-sm'
                   : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
               }`}
             >

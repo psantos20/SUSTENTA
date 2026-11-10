@@ -426,7 +426,7 @@ export default function ReportsPage() {
             className={clsx(
               'flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all',
               retrospectiva?.temDados
-                ? 'bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-500 hover:to-fuchsia-500 text-white shadow-lg shadow-violet-900/30'
+                ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-md'
                 : darkMode
                   ? 'bg-slate-800 text-slate-600 cursor-not-allowed border border-slate-700'
                   : 'bg-slate-100 text-slate-400 cursor-not-allowed'
@@ -497,6 +497,11 @@ export default function ReportsPage() {
                 Selecione um período e clique em{' '}
                 <span className="text-emerald-500 font-medium">Visualizar</span>.
               </p>
+              <ol className={clsx('text-xs mt-4 space-y-1 text-left inline-block', textSecondary)}>
+                <li>1. Escolha o mês no campo Período.</li>
+                <li>2. Clique em Visualizar para conferir os números.</li>
+                <li>3. Depois baixe em PDF ou CSV, compartilhe ou veja a Retrospectiva.</li>
+              </ol>
             </div>
           </motion.div>
         )}
@@ -512,8 +517,8 @@ export default function ReportsPage() {
           >
             <div
               className={clsx(
-                'flex gap-1 p-1 rounded-xl w-fit',
-                darkMode ? 'bg-slate-800' : 'bg-slate-100'
+                'flex gap-1 p-1 rounded-full w-fit max-w-full overflow-x-auto border',
+                darkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'
               )}
             >
               {[
@@ -525,7 +530,7 @@ export default function ReportsPage() {
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id as 'resumo' | 'evolucao' | 'registros')}
                   className={clsx(
-                    'flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all',
+                    'flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold transition-all',
                     activeTab === tab.id
                       ? 'bg-emerald-600 text-white shadow-sm'
                       : darkMode
@@ -731,15 +736,15 @@ export default function ReportsPage() {
 
                     <ResponsiveContainer width="100%" height={260}>
                       <LineChart data={reportData.historico} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
-                        <CartesianGrid strokeDasharray="3 3" stroke={darkMode ? '#1e293b' : '#f1f5f9'} />
+                        <CartesianGrid strokeDasharray="3 3" stroke={darkMode ? '#1f3328' : '#e3efe6'} />
                         <XAxis
                           dataKey="label"
-                          tick={{ fill: darkMode ? '#64748b' : '#94a3b8', fontSize: 11 }}
+                          tick={{ fill: darkMode ? '#8fa89a' : '#5c7868', fontSize: 11 }}
                           axisLine={false}
                           tickLine={false}
                         />
                         <YAxis
-                          tick={{ fill: darkMode ? '#64748b' : '#94a3b8', fontSize: 11 }}
+                          tick={{ fill: darkMode ? '#8fa89a' : '#5c7868', fontSize: 11 }}
                           axisLine={false}
                           tickLine={false}
                           width={45}

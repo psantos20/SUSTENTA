@@ -8,7 +8,7 @@ interface TermosUsoPageProps {
 const secoes = [
   {
     icon: UserCheck,
-    cor: 'text-emerald-600 bg-emerald-50',
+    cor: 'text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/30',
     titulo: '1. Aceitação dos Termos',
     conteudo: `Ao acessar ou utilizar a plataforma Sustenta, seja pelo aplicativo web, mobile ou qualquer outro meio disponibilizado, você declara que:
 
@@ -24,7 +24,7 @@ Estes Termos de Uso constituem um acordo legal vinculante entre você (Usuário)
   },
   {
     icon: CheckCircle,
-    cor: 'text-blue-600 bg-blue-50',
+    cor: 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20',
     titulo: '2. Cadastro e Conta',
     conteudo: `Para utilizar as funcionalidades completas do Sustenta, é necessário criar uma conta. Ao fazê-lo:
 
@@ -60,7 +60,7 @@ Você não pode:
   },
   {
     icon: Ban,
-    cor: 'text-red-600 bg-red-50',
+    cor: 'text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20',
     titulo: '4. Condutas Proibidas',
     conteudo: `É expressamente proibido utilizar o Sustenta para:
 
@@ -80,7 +80,7 @@ O descumprimento dessas regras poderá resultar na suspensão ou exclusão perma
   },
   {
     icon: AlertTriangle,
-    cor: 'text-amber-600 bg-amber-50',
+    cor: 'text-amber-600 bg-amber-50 dark:bg-amber-900/20',
     titulo: '5. Limitação de Responsabilidade',
     conteudo: `O Sustenta é fornecido "no estado em que se encontra" (as is), sem garantias expressas ou implícitas de qualquer natureza.
 
@@ -115,7 +115,7 @@ Nossa responsabilidade total perante você, em qualquer hipótese, não exceder�
   },
   {
     icon: RefreshCw,
-    cor: 'text-slate-600 bg-slate-100',
+    cor: 'text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-700',
     titulo: '7. Alterações e Vigência',
     conteudo: `Reservamo-nos o direito de modificar estes Termos de Uso a qualquer momento, mediante aviso prévio aos usuários:
 
@@ -137,13 +137,13 @@ export const TermosUsoPage: React.FC<TermosUsoPageProps> = ({ onVoltar }) => {
   const [aberta, setAberta] = useState<number | null>(0);
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100">
 
       {/* Header */}
-      <header className="bg-white border-b border-slate-200 px-6 py-4 flex items-center gap-4 sticky top-0 z-10">
+      <header className="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 px-6 py-4 flex items-center gap-4 sticky top-0 z-10">
         <button
           onClick={onVoltar}
-          className="flex items-center gap-2 text-slate-500 hover:text-emerald-600 transition-colors text-sm font-medium"
+          className="flex items-center gap-2 text-slate-500 dark:text-slate-400 hover:text-emerald-600 transition-colors text-sm font-medium"
         >
           <ArrowLeft className="w-4 h-4" />
           Voltar
@@ -153,7 +153,7 @@ export const TermosUsoPage: React.FC<TermosUsoPageProps> = ({ onVoltar }) => {
           <div className="bg-emerald-600 p-1.5 rounded-lg">
             <Leaf className="text-white w-4 h-4" />
           </div>
-          <span className="font-bold text-slate-900">Sustenta</span>
+          <span className="font-bold text-slate-900 dark:text-slate-100">Sustenta</span>
         </div>
       </header>
 
@@ -167,14 +167,14 @@ export const TermosUsoPage: React.FC<TermosUsoPageProps> = ({ onVoltar }) => {
           <p className="text-slate-400 text-lg leading-relaxed max-w-xl mx-auto">
             Leia com atenção as condições que regem o uso da plataforma Sustenta. Ao criar sua conta, você concorda com estes termos.
           </p>
-          <p className="text-slate-500 text-sm mt-6">Última atualização: janeiro de 2026</p>
+          <p className="text-slate-500 dark:text-slate-400 text-sm mt-6">Última atualização: janeiro de 2026</p>
         </div>
       </section>
 
       <div className="max-w-3xl mx-auto px-6 py-16 space-y-6">
 
         {/* Intro */}
-        <div className="bg-amber-50 border border-amber-100 rounded-2xl p-6 flex gap-4">
+        <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-100 dark:border-amber-800 rounded-2xl p-6 flex gap-4">
           <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
           <p className="text-amber-800 text-sm leading-relaxed">
             <strong>Importante:</strong> Estes Termos de Uso constituem um contrato legal entre você e o Sustenta. O uso da plataforma implica na aceitação integral deste documento. Se tiver dúvidas, entre em contato antes de prosseguir.
@@ -187,15 +187,15 @@ export const TermosUsoPage: React.FC<TermosUsoPageProps> = ({ onVoltar }) => {
             const Icon = secao.icon;
             const estaAberta = aberta === i;
             return (
-              <div key={i} className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+              <div key={i} className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm overflow-hidden">
                 <button
                   onClick={() => setAberta(estaAberta ? null : i)}
-                  className="w-full flex items-center gap-4 p-5 text-left hover:bg-slate-50 transition-colors"
+                  className="w-full flex items-center gap-4 p-5 text-left hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors"
                 >
                   <div className={`shrink-0 p-2.5 rounded-xl ${secao.cor}`}>
                     <Icon className="w-4 h-4" />
                   </div>
-                  <span className="flex-1 font-bold text-slate-900 text-sm">{secao.titulo}</span>
+                  <span className="flex-1 font-bold text-slate-900 dark:text-slate-100 text-sm">{secao.titulo}</span>
                   {estaAberta
                     ? <ChevronUp className="w-4 h-4 text-slate-400 shrink-0" />
                     : <ChevronDown className="w-4 h-4 text-slate-400 shrink-0" />
@@ -203,7 +203,7 @@ export const TermosUsoPage: React.FC<TermosUsoPageProps> = ({ onVoltar }) => {
                 </button>
                 {estaAberta && (
                   <div className="px-5 pb-5 border-t border-slate-50">
-                    <p className="text-sm text-slate-500 leading-relaxed whitespace-pre-line pt-4">
+                    <p className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed whitespace-pre-line pt-4">
                       {secao.conteudo}
                     </p>
                   </div>
@@ -220,7 +220,7 @@ export const TermosUsoPage: React.FC<TermosUsoPageProps> = ({ onVoltar }) => {
           <p className="text-emerald-100 text-sm mb-4 leading-relaxed">
             Nossa equipe jurídica está disponível para esclarecer qualquer questão relacionada a estes Termos de Uso.
           </p>
-          <a href="mailto:juridico@sustenta.app" className="inline-block bg-white text-emerald-700 font-bold text-sm px-6 py-3 rounded-xl hover:bg-emerald-50 transition-colors">
+          <a href="mailto:juridico@sustenta.app" className="inline-block bg-white dark:bg-slate-800 text-emerald-700 dark:text-emerald-400 font-bold text-sm px-6 py-3 rounded-xl hover:bg-emerald-50 transition-colors">
             juridico@sustenta.app
           </a>
         </div>
@@ -228,7 +228,7 @@ export const TermosUsoPage: React.FC<TermosUsoPageProps> = ({ onVoltar }) => {
       </div>
 
       {/* Footer */}
-      <footer className="border-t border-slate-200 py-8 text-center text-slate-400 text-sm">
+      <footer className="border-t border-slate-200 dark:border-slate-700 py-8 text-center text-slate-400 text-sm">
         <p>© 2026 Sustenta — Gestão Inteligente de Consumo e Sustentabilidade</p>
       </footer>
     </div>

@@ -59,14 +59,14 @@ export const ProfilePage: React.FC = () => {
           </p>
         </div>
 
-        <div className="flex p-1 bg-slate-100 dark:bg-slate-700 rounded-xl w-fit">
+        <div className="flex p-1 gap-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-full w-fit max-w-full overflow-x-auto">
           {(['perfil', 'familia', 'config'] as const).map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`px-5 py-2 rounded-lg font-bold text-sm transition-all ${
+              className={`px-5 py-2 rounded-full font-semibold text-sm whitespace-nowrap transition-all ${
                 activeTab === tab
-                  ? 'bg-white dark:bg-slate-600 text-emerald-600 dark:text-emerald-400 shadow-sm'
+                  ? 'bg-emerald-600 text-white shadow-sm'
                   : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
               }`}
             >

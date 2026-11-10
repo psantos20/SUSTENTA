@@ -17,6 +17,7 @@ export function HabitosTab(p: HabitosCtx) {
         <div className="flex items-center justify-between px-1">
           <h3 className="font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest text-xs">
             Tarefas para hoje — {concluidos}/{total}
+            <span className="ml-2 normal-case tracking-normal font-medium text-slate-400 dark:text-slate-500">(as pendentes aparecem primeiro)</span>
           </h3>
 
           <button
@@ -29,7 +30,9 @@ export function HabitosTab(p: HabitosCtx) {
         </div>
 
         <div className="space-y-3">
-          {todosHabitos.map((habito) => {
+          {[...todosHabitos]
+            .sort((a, b) => Number(feitos.some((h) => h.id === a.id)) - Number(feitos.some((h) => h.id === b.id)))
+            .map((habito) => {
             const feito = feitos.some((h) => h.id === habito.id);
             const carregandoEste = salvando === habito.id;
             const cor = COR_CATEGORIA[habito.categoria];

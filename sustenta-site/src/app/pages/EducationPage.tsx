@@ -108,7 +108,7 @@ export default function EducationPage() {
   return (
     <div
       className={clsx(
-        'min-h-screen p-6 space-y-6',
+        'edu-scope min-h-screen p-6 space-y-6',
         darkMode ? 'bg-slate-900' : 'bg-slate-50'
       )}
     >
@@ -184,19 +184,19 @@ export default function EducationPage() {
                 label: 'Noticias lidas',
                 value: `${artigosLidos}/${NOTICIAS_CATEGORIAS.length}`,
                 icon: BookOpen,
-                color: 'text-blue-400',
+                color: 'text-emerald-600 dark:text-emerald-400',
               },
               {
                 label: 'Quizzes',
                 value: `${quizCompletos}/${QUIZ_CATEGORIAS.length}`,
                 icon: Brain,
-                color: 'text-violet-400',
+                color: 'text-emerald-600 dark:text-emerald-400',
               },
               {
                 label: 'Desafios',
                 value: `${progress?.desafiosAceitos.length ?? 0}/7`,
                 icon: Bolt,
-                color: 'text-amber-400',
+                color: 'text-emerald-600 dark:text-emerald-400',
               },
             ].map((s) => (
               <div key={s.label} className="flex items-center gap-2">
@@ -237,7 +237,7 @@ export default function EducationPage() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4, delay: 0.1 }}
         className={clsx(
-          'flex gap-1 p-1.5 rounded-2xl overflow-x-auto border backdrop-blur-sm',
+          'flex gap-1 p-1 rounded-full overflow-x-auto border w-fit max-w-full',
           darkMode ? 'bg-white/5 border-white/10' : 'bg-white border-slate-200 shadow-sm'
         )}
       >

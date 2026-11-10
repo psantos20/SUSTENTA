@@ -78,10 +78,10 @@ function useDarkMode() {
 }
 
 const COR_CAT: Record<string, { bg: string; text: string; icon: React.ElementType; cor: string; corDark: string }> = {
-  energia: { bg: 'bg-amber-50 dark:bg-amber-900/20',     text: 'text-amber-600 dark:text-amber-400',     icon: Zap,      cor: '#f59e0b', corDark: '#fbbf24' },
-  agua:    { bg: 'bg-blue-50 dark:bg-blue-900/20',       text: 'text-blue-600 dark:text-blue-400',       icon: Droplets, cor: '#3b82f6', corDark: '#60a5fa' },
-  transporte: { bg: 'bg-violet-50 dark:bg-violet-900/20', text: 'text-violet-600 dark:text-violet-400',   icon: Car,      cor: '#8b5cf6', corDark: '#a78bfa' },
-  outro:   { bg: 'bg-emerald-50 dark:bg-emerald-900/20', text: 'text-emerald-600 dark:text-emerald-400', icon: Wallet,   cor: '#10b981', corDark: '#34d399' },
+  energia: { bg: 'bg-emerald-100 dark:bg-emerald-900', text: 'text-emerald-700 dark:text-emerald-400',     icon: Zap,      cor: '#f59e0b', corDark: '#fbbf24' },
+  agua:    { bg: 'bg-emerald-100 dark:bg-emerald-900', text: 'text-emerald-700 dark:text-emerald-400',       icon: Droplets, cor: '#3b82f6', corDark: '#60a5fa' },
+  transporte: { bg: 'bg-emerald-100 dark:bg-emerald-900', text: 'text-emerald-700 dark:text-emerald-400',   icon: Car,      cor: '#8b5cf6', corDark: '#a78bfa' },
+  outro:   { bg: 'bg-emerald-100 dark:bg-emerald-900', text: 'text-emerald-700 dark:text-emerald-400', icon: Wallet,   cor: '#10b981', corDark: '#34d399' },
 };
 
 // ─── Exportar CSV ─────────────────────────────────────────────────────────────
@@ -117,10 +117,10 @@ const CustomTooltip = ({ active, payload, label }: any) => {
   if (!active || !payload?.length) return null;
   return (
     <div style={{
-      background: dark ? '#1e293b' : '#fff',
-      border: `1px solid ${dark ? '#334155' : '#e2e8f0'}`,
+      background: dark ? '#0f1f18' : '#fff',
+      border: `1px solid ${dark ? '#1f3328' : '#d2e3d7'}`,
       borderRadius: 14, padding: '10px 14px', fontSize: 12,
-      color: dark ? '#f1f5f9' : '#0f172a',
+      color: dark ? '#e9f5ee' : '#10231a',
       boxShadow: '0 10px 25px rgba(0,0,0,0.12)',
     }}>
       <p style={{ fontWeight: 700, marginBottom: 4 }}>{label}</p>
@@ -291,8 +291,8 @@ export const HistoryPage: React.FC = () => {
     setRegistros(prev => prev.filter(r => r.id !== id));
   };
 
-  const gridColor = dark ? '#334155' : '#f1f5f9';
-  const tickColor = dark ? '#94a3b8' : '#94a3b8';
+  const gridColor = dark ? '#1f3328' : '#e3efe6';
+  const tickColor = dark ? '#8fa89a' : '#5c7868';
 
   // ─── Render ───────────────────────────────────────────────────────────────
   return (
@@ -340,7 +340,7 @@ export const HistoryPage: React.FC = () => {
           <BarChart3 className="w-16 h-16 text-slate-200 dark:text-slate-600 mx-auto mb-4" />
           <h2 className="text-xl font-bold text-slate-700 dark:text-slate-300">Nenhum registro ainda</h2>
           <p className="text-slate-500 dark:text-slate-400 mt-2">
-            Adicione gastos em <strong>Registrar Consumo</strong> para ver seu histórico aqui.
+            Adicione gastos em <strong>Gastos</strong> para ver seu histórico aqui.
           </p>
         </div>
       ) : (

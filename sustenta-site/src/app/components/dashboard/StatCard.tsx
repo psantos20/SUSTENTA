@@ -21,20 +21,16 @@ interface StatCardProps {
 export const StatCard: React.FC<StatCardProps> = ({
   title, value, unit, icon: Icon, trend, color, delay = 0,
 }) => {
-  const iconClasses = {
-    emerald: 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-400',
-    blue:    'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-400',
-    amber:   'bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400',
-    indigo:  'bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-400',
-    violet:  'bg-violet-100 dark:bg-violet-900/40 text-violet-700 dark:text-violet-400',
-  };
+  // Design novo: ícones em tom único (marca). A categoria continua clara pelo título.
+  const tom = 'bg-emerald-100 dark:bg-emerald-900 text-emerald-700 dark:text-emerald-400';
+  const iconClasses = { emerald: tom, blue: tom, amber: tom, indigo: tom, violet: tom };
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay }}
-      className="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm hover:shadow-md transition-shadow"
+      className="bg-white dark:bg-slate-800 p-6 rounded-[20px] border border-slate-100 dark:border-slate-700 hover:border-emerald-300 dark:hover:border-emerald-700 transition-shadow"
     >
       <div className="flex items-start justify-between">
         <div>

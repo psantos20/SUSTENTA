@@ -37,10 +37,10 @@ const CustomTooltip = ({ active, payload, label }: any) => {
   if (!active || !payload?.length) return null;
   return (
     <div style={{
-      background: dark ? '#1e293b' : '#fff',
-      border: `1px solid ${dark ? '#334155' : '#e2e8f0'}`,
+      background: dark ? '#0f1f18' : '#fff',
+      border: `1px solid ${dark ? '#1f3328' : '#d2e3d7'}`,
       borderRadius: 12, padding: '10px 14px', fontSize: 13,
-      color: dark ? '#f1f5f9' : '#0f172a',
+      color: dark ? '#e9f5ee' : '#10231a',
       boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
     }}>
       <p style={{ fontWeight: 700, marginBottom: 4 }}>{label}</p>
@@ -58,10 +58,10 @@ const PieTooltip = ({ active, payload }: any) => {
   if (!active || !payload?.length) return null;
   return (
     <div style={{
-      background: dark ? '#1e293b' : '#fff',
-      border: `1px solid ${dark ? '#334155' : '#e2e8f0'}`,
+      background: dark ? '#0f1f18' : '#fff',
+      border: `1px solid ${dark ? '#1f3328' : '#d2e3d7'}`,
       borderRadius: 12, padding: '8px 12px', fontSize: 12,
-      color: dark ? '#f1f5f9' : '#0f172a',
+      color: dark ? '#e9f5ee' : '#10231a',
       boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
     }}>
       <p style={{ fontWeight: 700, color: payload[0].payload.color }}>
@@ -156,8 +156,8 @@ export const AnalysisPage: React.FC = () => {
   const [estado,     setEstado]     = React.useState('');
   const [periodo,    setPeriodo]    = React.useState<Periodo>('tudo');
 
-  const gridColor = dark ? '#334155' : '#f1f5f9';
-  const tickColor = dark ? '#94a3b8' : '#64748b';
+  const gridColor = dark ? '#1f3328' : '#e3efe6';
+  const tickColor = dark ? '#8fa89a' : '#5c7868';
 
   React.useEffect(() => {
     const carregar = async () => {
@@ -285,7 +285,7 @@ export const AnalysisPage: React.FC = () => {
         <div className="text-6xl mb-4">📊</div>
         <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100">Nenhum dado ainda</h2>
         <p className="text-slate-500 dark:text-slate-400 mt-2">
-          Registre seus gastos em <strong>Registrar Consumo</strong> para ver as análises!
+          Registre seus gastos em <strong>Gastos</strong> para ver as análises!
         </p>
       </div>
     </motion.div>
@@ -326,25 +326,13 @@ export const AnalysisPage: React.FC = () => {
           { label: 'Energia Total',   value: totalEnergia, icon: Zap,      color: 'amber'   },
           { label: 'Água Total',      value: totalAgua,    icon: Droplets, color: 'blue'    },
           { label: 'Transporte Total', value: totalTransporte, icon: Car,   color: 'violet'  },
-        ].map(({ label, value, icon: Icon, color }, i) => (
+        ].map(({ label, value, icon: Icon }, i) => (
           <motion.div key={label}
             initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.08 }}
             className="bg-white dark:bg-slate-800 p-5 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm">
-            <div className={`w-10 h-10 rounded-xl mb-3 flex items-center justify-center
-              ${color === 'indigo'  ? 'bg-indigo-50 dark:bg-indigo-900/20'   : ''}
-              ${color === 'emerald' ? 'bg-emerald-50 dark:bg-emerald-900/20' : ''}
-              ${color === 'amber'   ? 'bg-amber-50 dark:bg-amber-900/20'     : ''}
-              ${color === 'blue'    ? 'bg-blue-50 dark:bg-blue-900/20'       : ''}
-              ${color === 'violet'  ? 'bg-violet-50 dark:bg-violet-900/20'   : ''}
-            `}>
-              <Icon className={`w-5 h-5
-                ${color === 'indigo'  ? 'text-indigo-600 dark:text-indigo-400'   : ''}
-                ${color === 'emerald' ? 'text-emerald-600 dark:text-emerald-400' : ''}
-                ${color === 'amber'   ? 'text-amber-600 dark:text-amber-400'     : ''}
-                ${color === 'blue'    ? 'text-blue-600 dark:text-blue-400'       : ''}
-                ${color === 'violet'  ? 'text-violet-600 dark:text-violet-400'   : ''}
-              `} />
+            <div className="w-10 h-10 rounded-xl mb-3 flex items-center justify-center bg-emerald-100 dark:bg-emerald-900">
+              <Icon className="w-5 h-5 text-emerald-700 dark:text-emerald-400" />
             </div>
             <p className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1">{label}</p>
             <p className="text-xl font-black text-slate-900 dark:text-slate-100">R$ {value.toFixed(0)}</p>
@@ -413,6 +401,40 @@ export const AnalysisPage: React.FC = () => {
           </span>
         </motion.div>
       )}
+
+      {/* Insights automáticos */}
+      <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.45 }}
+        className="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm">
+        <div className="flex items-center gap-3 mb-6">
+          <div className="bg-amber-50 dark:bg-amber-900/20 p-2.5 rounded-xl">
+            <Lightbulb className="w-5 h-5 text-amber-500" />
+          </div>
+          <div>
+            <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100">Insights Personalizados</h3>
+            <p className="text-xs text-slate-400 dark:text-slate-500">Baseados no seu histórico de consumo</p>
+          </div>
+        </div>
+        <div className="space-y-3">
+          {insights.map((insight, i) => (
+            <motion.div key={i}
+              initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.5 + i * 0.06 }}
+              className={`flex items-start gap-4 p-4 rounded-xl border
+                ${insight.tipo === 'positivo' ? 'bg-emerald-50 dark:bg-emerald-900/20 border-emerald-100 dark:border-emerald-800/40' : ''}
+                ${insight.tipo === 'negativo' ? 'bg-red-50 dark:bg-red-900/20 border-red-100 dark:border-red-800/40' : ''}
+                ${insight.tipo === 'neutro'   ? 'bg-slate-50 dark:bg-slate-700/50 border-slate-100 dark:border-slate-700' : ''}
+              `}>
+              <span className="text-xl shrink-0 mt-0.5">{insight.icone}</span>
+              <p className={`text-sm font-medium leading-relaxed
+                ${insight.tipo === 'positivo' ? 'text-emerald-800 dark:text-emerald-300' : ''}
+                ${insight.tipo === 'negativo' ? 'text-red-800 dark:text-red-300' : ''}
+                ${insight.tipo === 'neutro'   ? 'text-slate-700 dark:text-slate-300' : ''}
+              `}>
+                {insight.texto}
+              </p>
+            </motion.div>
+          ))}
+        </div>
+      </motion.div>
 
       {/* Gráfico de evolução mensal */}
       <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}
@@ -539,141 +561,6 @@ export const AnalysisPage: React.FC = () => {
         </motion.div>
       </div>
 
-      {/* Subcategorias */}
-      {dadosSubs.length > 0 && (
-        <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.38 }}
-          className="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm">
-          <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100 mb-1">Detalhamento — Outros</h3>
-          <p className="text-xs text-slate-400 dark:text-slate-500 mb-6">Distribuição das subcategorias</p>
-          <div className="h-40">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={dadosSubs} layout="vertical" margin={{ left: 0, right: 16 }}>
-                <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke={gridColor} />
-                <XAxis type="number" hide />
-                <YAxis dataKey="name" type="category" axisLine={false} tickLine={false}
-                  tick={{ fill: tickColor, fontSize: 11 }} width={80} />
-                <Tooltip content={<CustomTooltip />} cursor={{ fill: dark ? '#334155' : '#f8fafc' }} />
-                <Bar dataKey="valor" name="Valor" radius={[0, 6, 6, 0]} barSize={14}>
-                  {dadosSubs.map((_, i) => (
-                    <Cell key={i} fill={CORES_SUBS[i % CORES_SUBS.length]} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-          <div className="mt-4 flex flex-wrap gap-3">
-            {dadosSubs.map(({ name, valor }, i) => (
-              <div key={name} className="flex items-center gap-1.5">
-                <div className="w-2.5 h-2.5 rounded-full" style={{ background: CORES_SUBS[i % CORES_SUBS.length] }} />
-                <span className="text-xs text-slate-500 dark:text-slate-400">{name}</span>
-                <span className="text-xs font-bold text-slate-700 dark:text-slate-300">R$ {valor.toFixed(0)}</span>
-              </div>
-            ))}
-          </div>
-        </motion.div>
-      )}
-
-      {/* Comparação regional */}
-      <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}
-        className="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm">
-        <div className="flex items-start justify-between mb-6">
-          <div>
-            <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100">Comparação Regional</h3>
-            <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5 flex items-center gap-1">
-              <MapPin className="w-3 h-3" />
-              {estado ? `Média mensal — ${estado}` : 'Configure sua localização no perfil'}
-            </p>
-          </div>
-          {!estado && (
-            <div className="flex items-center gap-2 text-xs text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 border border-amber-100 dark:border-amber-800/40 px-3 py-1.5 rounded-xl">
-              <AlertCircle className="w-3.5 h-3.5" /> Localização não definida
-            </div>
-          )}
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {dadosRegional.map(({ name, voce, media, color }) => {
-            const diff = media > 0 ? ((voce - media) / media) * 100 : 0;
-            const melhor = voce < media;
-            return (
-              <div key={name} className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-bold text-slate-700 dark:text-slate-300">{name}</span>
-                  <div className={`flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full
-                    ${melhor ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400'
-                             : 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400'}`}>
-                    {melhor ? <ArrowDownRight className="w-3 h-3" /> : <ArrowUpRight className="w-3 h-3" />}
-                    {diff > 0 ? '+' : ''}{diff.toFixed(0)}% vs média
-                  </div>
-                </div>
-                <div className="space-y-1">
-                  <div className="flex justify-between text-xs">
-                    <span className="text-slate-500 dark:text-slate-400">Você (média/mês)</span>
-                    <span className="font-bold text-slate-800 dark:text-slate-200">R$ {voce}</span>
-                  </div>
-                  <div className="w-full h-3 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
-                    <div className="h-full rounded-full transition-all duration-700"
-                      style={{ width: `${Math.min((voce / Math.max(voce, media)) * 100, 100)}%`, background: color }} />
-                  </div>
-                </div>
-                <div className="space-y-1">
-                  <div className="flex justify-between text-xs">
-                    <span className="text-slate-500 dark:text-slate-400">Média regional</span>
-                    <span className="font-bold text-slate-800 dark:text-slate-200">R$ {media}</span>
-                  </div>
-                  <div className="w-full h-3 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
-                    <div className="h-full rounded-full transition-all duration-700 opacity-40"
-                      style={{ width: `${Math.min((media / Math.max(voce, media)) * 100, 100)}%`, background: color }} />
-                  </div>
-                </div>
-                <p className={`text-xs font-semibold ${melhor ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}>
-                  {melhor ? `✅ ${Math.abs(diff).toFixed(0)}% abaixo da média regional!` : `⚠️ ${Math.abs(diff).toFixed(0)}% acima da média regional.`}
-                </p>
-              </div>
-            );
-          })}
-        </div>
-        <div className="mt-4 flex items-start gap-2 p-3 bg-slate-50 dark:bg-slate-700/50 rounded-xl border border-slate-100 dark:border-slate-700">
-          <Info className="w-3.5 h-3.5 text-slate-400 shrink-0 mt-0.5" />
-          <p className="text-[11px] text-slate-400 dark:text-slate-500">
-            Média regional calculada com base nas tarifas oficiais do seu estado.
-          </p>
-        </div>
-      </motion.div>
-
-      {/* Insights automáticos */}
-      <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.45 }}
-        className="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm">
-        <div className="flex items-center gap-3 mb-6">
-          <div className="bg-amber-50 dark:bg-amber-900/20 p-2.5 rounded-xl">
-            <Lightbulb className="w-5 h-5 text-amber-500" />
-          </div>
-          <div>
-            <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100">Insights Personalizados</h3>
-            <p className="text-xs text-slate-400 dark:text-slate-500">Baseados no seu histórico de consumo</p>
-          </div>
-        </div>
-        <div className="space-y-3">
-          {insights.map((insight, i) => (
-            <motion.div key={i}
-              initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.5 + i * 0.06 }}
-              className={`flex items-start gap-4 p-4 rounded-xl border
-                ${insight.tipo === 'positivo' ? 'bg-emerald-50 dark:bg-emerald-900/20 border-emerald-100 dark:border-emerald-800/40' : ''}
-                ${insight.tipo === 'negativo' ? 'bg-red-50 dark:bg-red-900/20 border-red-100 dark:border-red-800/40' : ''}
-                ${insight.tipo === 'neutro'   ? 'bg-slate-50 dark:bg-slate-700/50 border-slate-100 dark:border-slate-700' : ''}
-              `}>
-              <span className="text-xl shrink-0 mt-0.5">{insight.icone}</span>
-              <p className={`text-sm font-medium leading-relaxed
-                ${insight.tipo === 'positivo' ? 'text-emerald-800 dark:text-emerald-300' : ''}
-                ${insight.tipo === 'negativo' ? 'text-red-800 dark:text-red-300' : ''}
-                ${insight.tipo === 'neutro'   ? 'text-slate-700 dark:text-slate-300' : ''}
-              `}>
-                {insight.texto}
-              </p>
-            </motion.div>
-          ))}
-        </div>
-      </motion.div>
-
       {/* Previsão próximo mês */}
       <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }}
         className="bg-gradient-to-br from-emerald-900 to-emerald-800 p-6 rounded-2xl shadow-xl relative overflow-hidden">
@@ -712,6 +599,120 @@ export const AnalysisPage: React.FC = () => {
           )}
         </div>
       </motion.div>
+
+      {/* Mais detalhes (sob demanda) */}
+      <details className="group bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm" data-testid="analise-detalhes">
+        <summary className="cursor-pointer list-none flex items-center justify-between gap-3 p-5">
+          <span className="text-lg font-bold text-slate-900 dark:text-slate-100 font-display">Mais detalhes</span>
+          <span className="flex items-center gap-2 text-xs font-semibold text-emerald-700 dark:text-emerald-400">
+            <span className="text-slate-500 dark:text-slate-400 font-normal hidden sm:inline">Subcategorias e comparação regional</span>
+            <span className="group-open:hidden">Mostrar</span>
+            <span className="hidden group-open:inline">Ocultar</span>
+          </span>
+        </summary>
+        <div className="space-y-6 p-5 pt-0">
+          {/* Subcategorias */}
+          {dadosSubs.length > 0 && (
+            <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.38 }}
+              className="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm">
+              <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100 mb-1">Detalhamento — Outros</h3>
+              <p className="text-xs text-slate-400 dark:text-slate-500 mb-6">Distribuição das subcategorias</p>
+              <div className="h-40">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={dadosSubs} layout="vertical" margin={{ left: 0, right: 16 }}>
+                    <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke={gridColor} />
+                    <XAxis type="number" hide />
+                    <YAxis dataKey="name" type="category" axisLine={false} tickLine={false}
+                      tick={{ fill: tickColor, fontSize: 11 }} width={80} />
+                    <Tooltip content={<CustomTooltip />} cursor={{ fill: dark ? '#1f3328' : '#e3efe6' }} />
+                    <Bar dataKey="valor" name="Valor" radius={[0, 6, 6, 0]} barSize={14}>
+                      {dadosSubs.map((_, i) => (
+                        <Cell key={i} fill={CORES_SUBS[i % CORES_SUBS.length]} />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+              <div className="mt-4 flex flex-wrap gap-3">
+                {dadosSubs.map(({ name, valor }, i) => (
+                  <div key={name} className="flex items-center gap-1.5">
+                    <div className="w-2.5 h-2.5 rounded-full" style={{ background: CORES_SUBS[i % CORES_SUBS.length] }} />
+                    <span className="text-xs text-slate-500 dark:text-slate-400">{name}</span>
+                    <span className="text-xs font-bold text-slate-700 dark:text-slate-300">R$ {valor.toFixed(0)}</span>
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+          )}
+
+          {/* Comparação regional */}
+          <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}
+            className="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm">
+            <div className="flex items-start justify-between mb-6">
+              <div>
+                <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100">Comparação Regional</h3>
+                <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5 flex items-center gap-1">
+                  <MapPin className="w-3 h-3" />
+                  {estado ? `Média mensal — ${estado}` : 'Configure sua localização no perfil'}
+                </p>
+              </div>
+              {!estado && (
+                <div className="flex items-center gap-2 text-xs text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 border border-amber-100 dark:border-amber-800/40 px-3 py-1.5 rounded-xl">
+                  <AlertCircle className="w-3.5 h-3.5" /> Localização não definida
+                </div>
+              )}
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {dadosRegional.map(({ name, voce, media, color }) => {
+                const diff = media > 0 ? ((voce - media) / media) * 100 : 0;
+                const melhor = voce < media;
+                return (
+                  <div key={name} className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-bold text-slate-700 dark:text-slate-300">{name}</span>
+                      <div className={`flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full
+                        ${melhor ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400'
+                                 : 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400'}`}>
+                        {melhor ? <ArrowDownRight className="w-3 h-3" /> : <ArrowUpRight className="w-3 h-3" />}
+                        {diff > 0 ? '+' : ''}{diff.toFixed(0)}% vs média
+                      </div>
+                    </div>
+                    <div className="space-y-1">
+                      <div className="flex justify-between text-xs">
+                        <span className="text-slate-500 dark:text-slate-400">Você (média/mês)</span>
+                        <span className="font-bold text-slate-800 dark:text-slate-200">R$ {voce}</span>
+                      </div>
+                      <div className="w-full h-3 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
+                        <div className="h-full rounded-full transition-all duration-700"
+                          style={{ width: `${Math.min((voce / Math.max(voce, media)) * 100, 100)}%`, background: color }} />
+                      </div>
+                    </div>
+                    <div className="space-y-1">
+                      <div className="flex justify-between text-xs">
+                        <span className="text-slate-500 dark:text-slate-400">Média regional</span>
+                        <span className="font-bold text-slate-800 dark:text-slate-200">R$ {media}</span>
+                      </div>
+                      <div className="w-full h-3 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
+                        <div className="h-full rounded-full transition-all duration-700 opacity-40"
+                          style={{ width: `${Math.min((media / Math.max(voce, media)) * 100, 100)}%`, background: color }} />
+                      </div>
+                    </div>
+                    <p className={`text-xs font-semibold ${melhor ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}>
+                      {melhor ? `✅ ${Math.abs(diff).toFixed(0)}% abaixo da média regional!` : `⚠️ ${Math.abs(diff).toFixed(0)}% acima da média regional.`}
+                    </p>
+                  </div>
+                );
+              })}
+            </div>
+            <div className="mt-4 flex items-start gap-2 p-3 bg-slate-50 dark:bg-slate-700/50 rounded-xl border border-slate-100 dark:border-slate-700">
+              <Info className="w-3.5 h-3.5 text-slate-400 shrink-0 mt-0.5" />
+              <p className="text-[11px] text-slate-400 dark:text-slate-500">
+                Média regional calculada com base nas tarifas oficiais do seu estado.
+              </p>
+            </div>
+          </motion.div>
+        </div>
+      </details>
 
     </div>
   );

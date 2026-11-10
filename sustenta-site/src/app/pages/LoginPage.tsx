@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Leaf, Mail, Lock, ArrowRight, User, Phone } from 'lucide-react';
+import { Leaf, Mail, Lock, ArrowRight, User, Phone, Check } from 'lucide-react';
 import { auth, googleProvider, db } from '../../services/firebase';
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signInWithPopup, sendEmailVerification } from 'firebase/auth';
 import { LIMITES, limparTexto, validarSenha } from '../../services/validacao';
@@ -146,50 +146,63 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, onNavigate }) => 
   };
 
   return (
-    <div className="min-h-screen flex flex-col md:flex-row bg-slate-50">
+    <div className="min-h-screen flex flex-col md:flex-row bg-slate-50 dark:bg-slate-900">
 
       {/* Painel esquerdo (desktop) */}
-      <div className="hidden md:flex md:w-1/2 bg-emerald-700 p-12 flex-col justify-between relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-96 h-96 bg-emerald-600 rounded-full blur-3xl opacity-20 -mr-20 -mt-20" />
-        <div className="absolute bottom-0 left-0 w-96 h-96 bg-emerald-800 rounded-full blur-3xl opacity-30 -ml-20 -mb-20" />
+      <div className="hidden md:flex md:w-1/2 p-12 lg:p-20 flex-col justify-between relative overflow-hidden">
+        <div className="absolute -top-40 -left-40 w-[520px] h-[520px] rounded-full bg-emerald-600 blur-3xl opacity-10 pointer-events-none" />
 
         <div className="relative z-10 flex items-center gap-3">
-          <div className="bg-white p-2 rounded-xl">
-            <Leaf className="text-emerald-700 w-6 h-6" />
+          <div className="bg-emerald-600 w-9 h-9 rounded-xl flex items-center justify-center glow-brand">
+            <Leaf className="text-white w-5 h-5" />
           </div>
-          <span className="text-2xl font-bold text-white tracking-tight">Sustenta</span>
+          <span className="font-display text-base font-semibold text-slate-900 dark:text-slate-100 tracking-wide uppercase">Sustenta</span>
         </div>
 
         <div className="relative z-10 max-w-md">
           <motion.h1
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="text-4xl lg:text-5xl font-bold text-white leading-tight mb-6"
+            className="text-4xl lg:text-5xl font-bold text-slate-900 dark:text-slate-100 leading-tight mb-6"
           >
             Seu companheiro rumo a um mundo mais sustentavel.
           </motion.h1>
-          <p className="text-emerald-100 text-lg">
+          <p className="text-slate-500 dark:text-slate-400 text-lg">
             Monitore seus habitos, reduza seu impacto ambiental e ganhe recompensas por suas acoes positivas.
           </p>
+          <ul className="mt-8 space-y-4">
+            {[
+              'Controle seus gastos e veja o impacto no ambiente',
+              'Ganhe XP com quizzes, desafios e hábitos',
+              'Encontre ecopontos perto de você',
+            ].map((beneficio) => (
+              <li key={beneficio} className="flex items-center gap-3 text-slate-700 dark:text-slate-200 font-medium">
+                <span className="w-6 h-6 rounded-full bg-emerald-100 dark:bg-emerald-900 text-emerald-700 dark:text-emerald-400 flex items-center justify-center shrink-0">
+                  <Check className="w-3.5 h-3.5" strokeWidth={3} />
+                </span>
+                {beneficio}
+              </li>
+            ))}
+          </ul>
         </div>
 
         {/* Links do rodape */}
-        <div className="relative z-10 flex gap-4 text-emerald-200 text-sm">
+        <div className="relative z-10 flex gap-4 text-slate-500 dark:text-slate-400 text-sm">
           <button
             onClick={() => onNavigate?.('sobre')}
-            className="hover:text-white transition-colors"
+            className="hover:text-emerald-700 dark:hover:text-emerald-400 transition-colors"
           >
             Sobre nos
           </button>
           <button
             onClick={() => onNavigate?.('privacidade')}
-            className="hover:text-white transition-colors"
+            className="hover:text-emerald-700 dark:hover:text-emerald-400 transition-colors"
           >
             Privacidade
           </button>
           <button
             onClick={() => onNavigate?.('termos')}
-            className="hover:text-white transition-colors"
+            className="hover:text-emerald-700 dark:hover:text-emerald-400 transition-colors"
           >
             Termos de uso
           </button>
@@ -198,7 +211,30 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, onNavigate }) => 
 
       {/* Painel direito (formulario) */}
       <div className="flex-1 flex flex-col justify-center items-center p-6 md:p-12 overflow-y-auto">
-        <div className="w-full max-w-md space-y-6">
+        <div className="w-full max-w-md space-y-6 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-3xl p-8 md:p-10 shadow-xl shadow-emerald-900/5">
+
+          {/* Abas Entrar / Criar conta */}
+          <div role="tablist" className="flex gap-1 p-1 rounded-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700">
+            {[
+              { id: false, rotulo: 'Entrar' },
+              { id: true, rotulo: 'Criar conta' },
+            ].map((aba) => (
+              <button
+                key={aba.rotulo}
+                type="button"
+                role="tab"
+                aria-selected={isRegister === aba.id}
+                onClick={() => { if (isRegister !== aba.id) { setIsRegister(aba.id); resetForm(); } }}
+                className={`flex-1 py-2.5 rounded-full text-sm font-semibold transition-all ${
+                  isRegister === aba.id
+                    ? 'bg-emerald-600 text-white'
+                    : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100'
+                }`}
+              >
+                {aba.rotulo}
+              </button>
+            ))}
+          </div>
 
           {/* Cabecalho */}
           <div className="text-center md:text-left">
@@ -207,14 +243,14 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, onNavigate }) => 
                 <Leaf className="text-white w-8 h-8" />
               </div>
             </div>
-            <h2 className="text-3xl font-bold text-slate-900">
+            <h2 className="text-3xl font-bold text-slate-900 dark:text-slate-100">
               {!isRegister
                 ? 'Entrar no Sustenta'
                 : step === 1
                   ? 'Crie sua conta'
                   : 'Onde voce mora?'}
             </h2>
-            <p className="text-slate-500 mt-2">
+            <p className="text-slate-500 dark:text-slate-400 mt-2">
               {!isRegister
                 ? 'Acesse seu painel.'
                 : step === 1
@@ -247,7 +283,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, onNavigate }) => 
             <motion.div
               initial={{ opacity: 0, y: -8 }}
               animate={{ opacity: 1, y: 0 }}
-              className="bg-red-50 text-red-600 px-4 py-3 rounded-xl text-sm text-center border border-red-100"
+              className="bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 px-4 py-3 rounded-xl text-sm text-center border border-red-100 dark:border-red-800"
             >
               {erro}
             </motion.div>
@@ -266,13 +302,13 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, onNavigate }) => 
                 className="space-y-4"
               >
                 <div>
-                  <label className="text-sm font-medium text-slate-700 block mb-2">Email</label>
+                  <label className="text-sm font-medium text-slate-700 dark:text-slate-200 block mb-2">Email</label>
                   <div className="relative">
                     <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
                     <input
                       type="email" required value={email}
                       onChange={e => setEmail(e.target.value)}
-                      className="w-full pl-10 pr-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 text-slate-900 bg-white"
+                      className="w-full pl-10 pr-4 py-3 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 text-slate-900 dark:text-slate-100 bg-slate-50 dark:bg-slate-900 placeholder:text-slate-400 dark:placeholder:text-slate-500"
                       placeholder="seu@email.com"
                     />
                   </div>
@@ -280,8 +316,8 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, onNavigate }) => 
 
                 <div>
                   <div className="flex justify-between mb-2">
-                    <label className="text-sm font-medium text-slate-700">Senha</label>
-                    <button type="button" className="text-xs font-semibold text-emerald-600 hover:text-emerald-700">
+                    <label className="text-sm font-medium text-slate-700 dark:text-slate-200">Senha</label>
+                    <button type="button" className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:text-emerald-700">
                       Esqueceu?
                     </button>
                   </div>
@@ -290,7 +326,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, onNavigate }) => 
                     <input
                       type="password" required value={password}
                       onChange={e => setPassword(e.target.value)}
-                      className="w-full pl-10 pr-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 text-slate-900 bg-white"
+                      className="w-full pl-10 pr-4 py-3 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 text-slate-900 dark:text-slate-100 bg-slate-50 dark:bg-slate-900 placeholder:text-slate-400 dark:placeholder:text-slate-500"
                       placeholder="••••••••"
                     />
                   </div>
@@ -298,7 +334,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, onNavigate }) => 
 
                 <button
                   type="submit" disabled={carregando}
-                  className="w-full flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-60 text-white font-bold py-3 rounded-xl transition-all shadow-lg active:scale-95"
+                  className="w-full flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-60 text-white font-bold py-3 rounded-full transition-all shadow-lg shadow-emerald-600/20 active:scale-95"
                 >
                   {carregando ? 'Aguarde...' : 'Entrar'}
                   {!carregando && <ArrowRight className="w-5 h-5" />}
@@ -317,20 +353,20 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, onNavigate }) => 
                 className="space-y-4"
               >
                 <div>
-                  <label className="text-sm font-medium text-slate-700 block mb-2">Nome completo</label>
+                  <label className="text-sm font-medium text-slate-700 dark:text-slate-200 block mb-2">Nome completo</label>
                   <div className="relative">
                     <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
                     <input
                       type="text" required value={nome}
                       maxLength={LIMITES.nome} onChange={e => setNome(e.target.value)}
-                      className="w-full pl-10 pr-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 text-slate-900 bg-white"
+                      className="w-full pl-10 pr-4 py-3 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 text-slate-900 dark:text-slate-100 bg-slate-50 dark:bg-slate-900 placeholder:text-slate-400 dark:placeholder:text-slate-500"
                       placeholder="Seu nome completo"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="text-sm font-medium text-slate-700 block mb-2">
+                  <label className="text-sm font-medium text-slate-700 dark:text-slate-200 block mb-2">
                     Telefone <span className="text-slate-400 font-normal">(opcional)</span>
                   </label>
                   <div className="relative">
@@ -338,33 +374,33 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, onNavigate }) => 
                     <input
                       type="tel" value={telefone}
                       maxLength={LIMITES.telefone} onChange={e => setTelefone(e.target.value)}
-                      className="w-full pl-10 pr-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 text-slate-900 bg-white"
+                      className="w-full pl-10 pr-4 py-3 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 text-slate-900 dark:text-slate-100 bg-slate-50 dark:bg-slate-900 placeholder:text-slate-400 dark:placeholder:text-slate-500"
                       placeholder="(11) 99999-9999"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="text-sm font-medium text-slate-700 block mb-2">Email</label>
+                  <label className="text-sm font-medium text-slate-700 dark:text-slate-200 block mb-2">Email</label>
                   <div className="relative">
                     <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
                     <input
                       type="email" required value={email}
                       onChange={e => setEmail(e.target.value)}
-                      className="w-full pl-10 pr-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 text-slate-900 bg-white"
+                      className="w-full pl-10 pr-4 py-3 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 text-slate-900 dark:text-slate-100 bg-slate-50 dark:bg-slate-900 placeholder:text-slate-400 dark:placeholder:text-slate-500"
                       placeholder="seu@email.com"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="text-sm font-medium text-slate-700 block mb-2">Senha</label>
+                  <label className="text-sm font-medium text-slate-700 dark:text-slate-200 block mb-2">Senha</label>
                   <div className="relative">
                     <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
                     <input
                       type="password" required value={password}
                       onChange={e => setPassword(e.target.value)}
-                      className="w-full pl-10 pr-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 text-slate-900 bg-white"
+                      className="w-full pl-10 pr-4 py-3 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 text-slate-900 dark:text-slate-100 bg-slate-50 dark:bg-slate-900 placeholder:text-slate-400 dark:placeholder:text-slate-500"
                       placeholder="Minimo 6 caracteres"
                     />
                   </div>
@@ -372,7 +408,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, onNavigate }) => 
 
                 <button
                   type="submit"
-                  className="w-full flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl transition-all shadow-lg active:scale-95"
+                  className="w-full flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-full transition-all shadow-lg shadow-emerald-600/20 active:scale-95"
                 >
                   Continuar <ArrowRight className="w-5 h-5" />
                 </button>
@@ -389,7 +425,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, onNavigate }) => 
                 onSubmit={handleRegisterStep2}
                 className="space-y-4"
               >
-                <p className="text-sm text-slate-500">Clique no seu estado no mapa:</p>
+                <p className="text-sm text-slate-500 dark:text-slate-400">Clique no seu estado no mapa:</p>
 
                 <React.Suspense fallback={<p className="text-sm text-slate-400">Carregando mapa...</p>}>
                 <MapaBrasil
@@ -411,13 +447,13 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, onNavigate }) => 
                   <button
                     type="button"
                     onClick={() => { setStep(1); setErro(''); }}
-                    className="flex-1 py-3 border border-slate-200 rounded-xl text-slate-600 font-semibold hover:bg-slate-50 transition-all"
+                    className="flex-1 py-3 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-600 dark:text-slate-300 font-semibold hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-all"
                   >
                     Voltar
                   </button>
                   <button
                     type="submit" disabled={carregando}
-                    className="flex-1 flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-60 text-white font-bold py-3 rounded-xl transition-all shadow-lg active:scale-95"
+                    className="flex-1 flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-60 text-white font-bold py-3 rounded-full transition-all shadow-lg shadow-emerald-600/20 active:scale-95"
                   >
                     {carregando ? 'Criando...' : 'Criar conta'}
                     {!carregando && <ArrowRight className="w-5 h-5" />}
@@ -433,16 +469,16 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, onNavigate }) => 
             <>
               <div className="relative">
                 <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-slate-200" />
+                  <div className="w-full border-t border-slate-200 dark:border-slate-700" />
                 </div>
                 <div className="relative flex justify-center text-sm">
-                  <span className="px-2 bg-slate-50 text-slate-500">Ou continue com</span>
+                  <span className="px-2 bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400">Ou continue com</span>
                 </div>
               </div>
 
               <button
                 onClick={handleGoogle} disabled={carregando}
-                className="w-full flex items-center justify-center gap-2 py-3 border border-slate-200 rounded-xl bg-white hover:bg-slate-50 transition-colors font-medium text-slate-700 disabled:opacity-60"
+                className="w-full flex items-center justify-center gap-2 py-3 border border-slate-200 dark:border-slate-700 rounded-full bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors font-medium text-slate-700 dark:text-slate-200 disabled:opacity-60"
               >
                 <img
                   src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
@@ -452,17 +488,6 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, onNavigate }) => 
               </button>
             </>
           )}
-
-          {/* Toggle login / cadastro */}
-          <p className="text-center text-slate-600">
-            {isRegister ? 'Ja tem uma conta?' : 'Nao tem uma conta?'}
-            <button
-              onClick={() => { setIsRegister(!isRegister); resetForm(); }}
-              className="ml-2 font-bold text-emerald-600 hover:text-emerald-700 transition-colors"
-            >
-              {isRegister ? 'Faca login' : 'Cadastre-se'}
-            </button>
-          </p>
 
           {/* Links mobile (rodape) */}
           <div className="md:hidden flex justify-center gap-4 text-slate-400 text-xs pt-2">

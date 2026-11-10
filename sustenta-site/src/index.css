@@ -1,39 +1,133 @@
 @import 'tailwindcss';
 @import 'tw-animate-css';
+@import '@fontsource-variable/dm-sans';
+@import '@fontsource-variable/sora';
 
 @custom-variant dark (&:is(.dark *));
 
-/* ─── Variáveis Light ──────────────────────────────────────────────────────── */
-:root {
-  --background: #f8fafc;
-  --foreground: #0f172a;
-  --card:        #ffffff;
-  --card-border: #f1f5f9;
-  --border:      rgba(0, 0, 0, 0.08);
-  --muted:       #f1f5f9;
-  --muted-fg:    #64748b;
-  --sidebar-bg:  #ffffff;
-  --sidebar-border: #e2e8f0;
-  --header-bg:   #ffffff;
-  --header-border: #e2e8f0;
-  --input-bg:    #f8fafc;
-  --radius:      0.625rem;
+/*
+ * SUSTENTA — identidade visual "Bioluminescente"
+ * Paleta, fontes e raios definidos no Figma (arquivo do redesign).
+ *
+ * Os componentes do app usam as classes padrão do Tailwind (slate-*, emerald-*).
+ * Em vez de reescrever cada classe, redefinimos aqui a escala dessas cores:
+ * `slate` virou a escala de neutros esverdeados e `emerald` a escala da marca.
+ * Cada tema (claro e escuro) tem os seus valores, então os mesmos nomes de classe
+ * passam a mostrar a cor certa em cada tema.
+ */
+
+@theme {
+  --font-sans: 'DM Sans Variable', 'DM Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-display: 'Sora Variable', 'Sora', 'DM Sans Variable', system-ui, sans-serif;
+  --radius-xl: 0.875rem;   /* 14px: campos, itens de lista */
+  --radius-2xl: 1.25rem;   /* 20px: cartões */
+  --radius-3xl: 1.75rem;   /* 28px: painéis grandes */
 }
 
-/* ─── Variáveis Dark ───────────────────────────────────────────────────────── */
+/* ─── Tema claro ───────────────────────────────────────────────────────────── */
+:root {
+  /* neutros (slate) */
+  --color-slate-50:  #eef6f0;   /* fundo do app */
+  --color-slate-100: #e3efe6;   /* superfície elevada */
+  --color-slate-200: #d2e3d7;   /* bordas */
+  --color-slate-300: #b6cfbd;
+  --color-slate-400: #5c7868;   /* texto de apoio / ícones (AA sobre branco) */
+  --color-slate-500: #4f6b5c;   /* texto suave */
+  --color-slate-600: #3f5a4b;
+  --color-slate-700: #2e463a;
+  --color-slate-800: #1b3328;
+  --color-slate-900: #10231a;   /* texto principal */
+  --color-slate-950: #0a1812;
+
+  /* marca (emerald e green usam a mesma escala) */
+  --color-emerald-50:  #ecf8f0;
+  --color-emerald-100: #dcefe2;  /* marca suave */
+  --color-emerald-200: #bfe3cb;
+  --color-emerald-300: #8fd1a6;
+  --color-emerald-400: #3fb56f;
+  --color-emerald-500: #1e9a54;
+  --color-emerald-600: #15803d;  /* primária */
+  --color-emerald-700: #0f5f2b;  /* texto da marca */
+  --color-emerald-800: #0b4a22;
+  --color-emerald-900: #083a1b;
+  --color-emerald-950: #052410;
+
+  --background:      #eef6f0;
+  --foreground:      #10231a;
+  --card:            #ffffff;
+  --card-border:     #d2e3d7;
+  --border:          rgba(16, 35, 26, 0.10);
+  --muted:           #e3efe6;
+  --muted-fg:        #4f6b5c;
+  --sidebar-bg:      #ffffff;
+  --sidebar-border:  #d2e3d7;
+  --header-bg:       rgba(255, 255, 255, 0.85);
+  --header-border:   #d2e3d7;
+  --input-bg:        #eef6f0;
+  --brand:           #15803d;
+  --on-brand:        #ffffff;
+  --brand-soft:      #dcefe2;
+  --glow:            rgba(21, 128, 61, 0.10);
+  --radius:          0.875rem;
+}
+
+/* ─── Tema escuro ──────────────────────────────────────────────────────────── */
 .dark {
-  --background: #0f172a;
-  --foreground: #f1f5f9;
-  --card:        #1e293b;
-  --card-border: #334155;
-  --border:      rgba(255, 255, 255, 0.08);
-  --muted:       #1e293b;
-  --muted-fg:    #94a3b8;
-  --sidebar-bg:  #1e293b;
-  --sidebar-border: #334155;
-  --header-bg:   #1e293b;
-  --header-border: #334155;
-  --input-bg:    #0f172a;
+  --color-slate-50:  #f1faf4;
+  --color-slate-100: #e9f5ee;   /* texto principal */
+  --color-slate-200: #cfe3d7;
+  --color-slate-300: #b4ccbf;
+  --color-slate-400: #8fa89a;   /* texto suave */
+  --color-slate-500: #7a9585;
+  --color-slate-600: #2a4436;
+  --color-slate-700: #1f3328;   /* bordas / superfícies elevadas */
+  --color-slate-800: #0f1f18;   /* cartões */
+  --color-slate-900: #07120e;   /* fundo do app */
+  --color-slate-950: #040a07;
+
+  --color-emerald-50:  #e3fbee;
+  --color-emerald-100: #c4f5db;
+  --color-emerald-200: #a5f0c9;
+  --color-emerald-300: #8ff0bd;
+  --color-emerald-400: #6ee7a8;  /* destaque */
+  --color-emerald-500: #5bdb9b;
+  --color-emerald-600: #6ee7a8;  /* primária */
+  --color-emerald-700: #17724a;  /* superfície de marca profunda (cartões de destaque) */
+  --color-emerald-800: #1f5a3d;
+  --color-emerald-900: #143a28;  /* marca suave */
+  --color-emerald-950: #0b2318;
+
+  --background:      #07120e;
+  --foreground:      #e9f5ee;
+  --card:            #0f1f18;
+  --card-border:     #1f3328;
+  --border:          rgba(233, 245, 238, 0.10);
+  --muted:           #16291f;
+  --muted-fg:        #8fa89a;
+  --sidebar-bg:      #0f1f18;
+  --sidebar-border:  #1f3328;
+  --header-bg:       rgba(7, 18, 14, 0.80);
+  --header-border:   #1f3328;
+  --input-bg:        #16291f;
+  --brand:           #6ee7a8;
+  --on-brand:        #07120e;
+  --brand-soft:      #143a28;
+  --glow:            rgba(110, 231, 168, 0.10);
+}
+
+/* "green" acompanha a escala da marca */
+:root, .dark {
+  --color-green-50:  var(--color-emerald-50);
+  --color-green-100: var(--color-emerald-100);
+  --color-green-200: var(--color-emerald-200);
+  --color-green-300: var(--color-emerald-300);
+  --color-green-400: var(--color-emerald-400);
+  --color-green-500: var(--color-emerald-500);
+  --color-green-600: var(--color-emerald-600);
+  --color-green-700: var(--color-emerald-700);
+  --color-green-800: var(--color-emerald-800);
+  --color-green-900: var(--color-emerald-900);
+  --color-green-950: var(--color-emerald-950);
 }
 
 /* ─── Base ─────────────────────────────────────────────────────────────────── */
@@ -44,37 +138,179 @@
     padding: 0;
   }
 
+  html {
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
   body {
     background-color: var(--background);
     color: var(--foreground);
-    font-family: system-ui, -apple-system, sans-serif;
+    font-family: var(--font-sans);
     transition: background-color 0.3s ease, color 0.3s ease;
   }
 
+  /* Brilho decorativo no canto superior direito (assinatura do tema) */
+  body::before {
+    content: '';
+    position: fixed;
+    top: -280px;
+    right: -200px;
+    width: 720px;
+    height: 720px;
+    border-radius: 9999px;
+    background: radial-gradient(closest-side, var(--glow), transparent);
+    pointer-events: none;
+    z-index: 0;
+  }
+  #root { position: relative; z-index: 1; }
+
+  h1, h2, h3, .font-display {
+    font-family: var(--font-display);
+    letter-spacing: -0.01em;
+  }
+
+  /* Foco visível e consistente */
+  :where(button, a, input, select, textarea, [role='button']):focus-visible {
+    outline: 2px solid var(--brand);
+    outline-offset: 2px;
+  }
+
   /* Scrollbar fina */
-  ::-webkit-scrollbar       { width: 4px; height: 4px; }
+  ::-webkit-scrollbar       { width: 6px; height: 6px; }
   ::-webkit-scrollbar-track { background: transparent; }
-  ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 99px; }
-  .dark ::-webkit-scrollbar-thumb { background: #334155; }
+  ::-webkit-scrollbar-thumb { background: var(--color-slate-300); border-radius: 99px; }
+  .dark ::-webkit-scrollbar-thumb { background: var(--color-slate-700); }
+
+  ::selection { background: var(--brand-soft); color: var(--foreground); }
 }
 
 /* ─── Utilitários dark mode para classes Tailwind ──────────────────────────── */
+/* (mantidos: garantem as variantes dark: no build) */
 
 /* Backgrounds */
-.dark .dark\:bg-slate-900  { background-color: #0f172a !important; }
-.dark .dark\:bg-slate-800  { background-color: #1e293b !important; }
-.dark .dark\:bg-slate-700  { background-color: #334155 !important; }
+.dark .dark\:bg-slate-900  { background-color: var(--color-slate-900) !important; }
+.dark .dark\:bg-slate-800  { background-color: var(--color-slate-800) !important; }
+.dark .dark\:bg-slate-700  { background-color: var(--color-slate-700) !important; }
 
 /* Textos */
-.dark .dark\:text-slate-100 { color: #f1f5f9 !important; }
-.dark .dark\:text-slate-300 { color: #cbd5e1 !important; }
-.dark .dark\:text-slate-400 { color: #94a3b8 !important; }
+.dark .dark\:text-slate-100 { color: var(--color-slate-100) !important; }
+.dark .dark\:text-slate-300 { color: var(--color-slate-300) !important; }
+.dark .dark\:text-slate-400 { color: var(--color-slate-400) !important; }
 
 /* Bordas */
-.dark .dark\:border-slate-700 { border-color: #334155 !important; }
+.dark .dark\:border-slate-700 { border-color: var(--color-slate-700) !important; }
+
+/* ─── Botões e destaques da marca no tema escuro ───────────────────────────── */
+/* A cor primária no escuro é menta clara: o texto sobre ela precisa ser escuro. */
+.dark :is(.bg-emerald-500, .bg-emerald-600, .from-emerald-400, .from-emerald-500, .from-emerald-600, .bg-green-500, .bg-green-600),
+.dark :is(.bg-emerald-500, .bg-emerald-600, .from-emerald-400, .from-emerald-500, .from-emerald-600, .bg-green-500, .bg-green-600) .text-white {
+  color: #07120e;
+}
+
+/* Hover dos botões primários: no escuro clareia em vez de escurecer */
+.dark .hover\:bg-emerald-700:hover { background-color: var(--color-emerald-300); color: #07120e; }
+
+/* Cartões grandes de destaque (fundo da marca com texto claro): no escuro ficam
+   verde profundo, com borda, para o texto continuar legível. */
+.dark :is(div, section).bg-emerald-600.text-white:is(.rounded-2xl, .rounded-3xl, .py-20) {
+  background-color: var(--color-emerald-900);
+  border: 1px solid var(--color-emerald-800);
+  color: var(--color-slate-100);
+}
+
+/* Botões de texto da marca ficam em formato de pílula (padrão do design) */
+:is(button, a).bg-emerald-600[class*='px-'],
+:is(button, a)[class*='from-emerald-600'][class*='px-'] {
+  border-radius: 9999px;
+}
+
+/* Sombras coloridas: no escuro viram um brilho suave */
+.dark [class*='shadow-emerald'] { --tw-shadow-color: rgba(110, 231, 168, 0.18); }
+
+/* ─── Utilitários da identidade ────────────────────────────────────────────── */
+.glow-brand { box-shadow: 0 0 24px -4px var(--glow); }
 
 /* Transição suave global */
 .dark-transition,
 .dark-transition * {
   transition: background-color 0.25s ease, border-color 0.25s ease, color 0.25s ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, ::before, ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ───────────────────────────────────────────────────────────────
+   Educação ambiental — modo claro
+   As abas foram escritas com superfícies translúcidas e texto branco
+   (pensadas para fundo escuro). No claro, remapeamos esses tokens
+   dentro de .edu-scope para que fiquem legíveis, sem mexer na lógica.
+   ─────────────────────────────────────────────────────────────── */
+:root:not(.dark) .edu-scope {
+  /* superfícies translúcidas → cartões brancos */
+  & .bg-white\/5 { background-color: #ffffff; box-shadow: 0 1px 2px rgb(16 35 26 / 0.06); }
+  & .bg-white\/10 { background-color: var(--color-slate-100); }
+  & .bg-white\/15,
+  & .bg-white\/20 { background-color: var(--color-slate-200); }
+  & .border-white\/10,
+  & .border-white\/20 { border-color: var(--color-slate-200); }
+  & .hover\:border-white\/20:hover,
+  & .hover\:border-white\/25:hover { border-color: var(--color-emerald-600); }
+  & .hover\:bg-white\/5:hover { background-color: var(--color-emerald-50); }
+  & .hover\:bg-white\/10:hover,
+  & .hover\:bg-white\/20:hover { background-color: var(--color-slate-200); }
+
+  /* texto branco → texto principal */
+  & .text-white { color: var(--color-slate-900); }
+  & .text-white\/60,
+  & .text-white\/70 { color: var(--color-slate-600); }
+  & .hover\:text-white:hover { color: var(--color-slate-900); }
+  & .text-slate-300 { color: var(--color-slate-700); }
+  & .placeholder-slate-500::placeholder { color: var(--color-slate-400); }
+
+  /* tons claros de acento → versões escuras com contraste */
+  & .text-emerald-300 { color: var(--color-emerald-700); }
+  & .text-emerald-400 { color: var(--color-emerald-600); }
+  & .text-amber-300,
+  & .text-amber-400,
+  & .text-yellow-400 { color: #b45309; }
+  & .text-orange-300 { color: #c2410c; }
+  & .text-red-300,
+  & .text-red-400 { color: #dc2626; }
+  & .text-blue-400 { color: #2563eb; }
+  & .text-violet-400 { color: #7c3aed; }
+  & .bg-emerald-900\/30 { background-color: var(--color-emerald-100); }
+  & .border-emerald-700\/40 { border-color: var(--color-emerald-200); }
+
+  /* ...mas superfícies coloridas/gradientes mantêm texto branco */
+  & :is([class*="from-emerald-"], [class*="from-green-"], [class*="from-blue-"], [class*="from-yellow-"],
+       [class*="from-cyan-"], [class*="from-violet-"], .bg-emerald-500, .bg-emerald-600, .bg-red-500, .bg-black\/70, .bg-black\/50, .bg-black\/40, .bg-white\/25).text-white,
+  & :is([class*="from-emerald-"], [class*="from-green-"], [class*="from-blue-"], [class*="from-yellow-"],
+       [class*="from-cyan-"], [class*="from-violet-"], .bg-emerald-500, .bg-emerald-600, .bg-red-500, .bg-black\/70, .bg-black\/50, .bg-black\/40, .bg-white\/25) .text-white {
+    color: #ffffff;
+  }
+  /* cartão do desafio do dia usa gradiente translúcido (from-*\/20): texto escuro */
+  & .edu-soft .text-white { color: var(--color-slate-900); }
+  & .edu-soft button.text-white { color: var(--color-slate-900); }
+}
+
+/* ───────────────────────────────────────────────────────────────
+   Tipografia e ícones iguais ao Figma
+   - Sora em títulos, números de destaque e rótulos fortes
+   - Ícones lucide com traço mais fino (1.75), como no design
+   ─────────────────────────────────────────────────────────────── */
+.font-black,
+.font-extrabold,
+.font-bold:is(.text-xl, .text-2xl, .text-3xl, .text-4xl, .text-5xl, .text-6xl),
+.font-semibold:is(.text-xl, .text-2xl, .text-3xl, .text-4xl) {
+  font-family: var(--font-display);
+  letter-spacing: -0.01em;
+}
+svg.lucide {
+  stroke-width: 1.75;
 }
