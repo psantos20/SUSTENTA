@@ -66,6 +66,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
   const paginasBusca = [
     { nome: 'Dashboard', page: 'dashboard' },
     { nome: 'Consumo', page: 'consumption' },
+    { nome: 'Assinaturas', page: 'subscriptions' },
     { nome: 'Análises', page: 'analysis' },
     { nome: 'Hábitos', page: 'habits' },
     { nome: 'Histórico', page: 'history' },

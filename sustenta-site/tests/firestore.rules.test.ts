@@ -354,3 +354,104 @@ describe('ranking e cache', () => {
     await assertFails(setDoc(doc(db(ALICE), 'qualquer', 'x'), { a: 1 }));
   });
 });
+
+describe('streaming (SUSTENTA Streaming)', () => {
+  const assinaturas = { conexao: { itemId: 'item', banco: 'Nubank', status: 'UPDATED', ultimaSync: 'x' }, assinaturas: [], atualizadoEm: 'x' };
+
+  it('streaming/{uid}: dono lê e apaga; ninguém escreve pelo app', async () => {
+    await seed(async (d) => { await setDoc(doc(d, 'streaming', ALICE), assinaturas); });
+    await assertSucceeds(getDoc(doc(db(ALICE), 'streaming', ALICE)));
+    await assertFails(getDoc(doc(db(EVE), 'streaming', ALICE)));
+    await assertFails(getDoc(doc(anon(), 'streaming', ALICE)));
+    await assertFails(setDoc(doc(db(ALICE), 'streaming', ALICE), assinaturas));
+    await assertFails(updateDoc(doc(db(ALICE), 'streaming', ALICE), { assinaturas: [{ servico: 'netflix' }] }));
+    await assertFails(setDoc(doc(db(ALICE), 'streaming', BOB), assinaturas));
+    await assertFails(deleteDoc(doc(db(EVE), 'streaming', ALICE)));
+    await assertSucceeds(deleteDoc(doc(db(ALICE), 'streaming', ALICE)));
+  });
+
+  it('respostas da TV: cada um grava e lê só as suas, com valores válidos', async () => {
+    const id = `${ALICE}_2026-10`;
+    const resposta = { uid: ALICE, mes: '2026-10', tv: { max: 'pouco' }, atualizadoEm: serverTimestamp() };
+    // Ler um mês ainda sem resposta não dá erro para o dono.
+    await assertSucceeds(getDoc(doc(db(ALICE), 'streaming_respostas', id)));
+    await assertSucceeds(setDoc(doc(db(ALICE), 'streaming_respostas', id), resposta));
+    await assertSucceeds(setDoc(doc(db(ALICE), 'streaming_respostas', id), { ...resposta, tv: { max: 'bastante', disney: 'nao' } }));
+    await assertSucceeds(getDoc(doc(db(ALICE), 'streaming_respostas', id)));
+    await assertSucceeds(getDocs(query(collection(db(ALICE), 'streaming_respostas'), where('uid', '==', ALICE))));
+
+    await assertFails(getDoc(doc(db(EVE), 'streaming_respostas', id)));
+    await assertFails(getDocs(query(collection(db(EVE), 'streaming_respostas'), where('uid', '==', ALICE))));
+    await assertFails(setDoc(doc(db(EVE), 'streaming_respostas', id), { ...resposta, uid: EVE }));
+    await assertFails(deleteDoc(doc(db(EVE), 'streaming_respostas', id)));
+  });
+
+  it('respostas da TV: recusa formato errado', async () => {
+    const id = `${ALICE}_2026-10`;
+    const ref = doc(db(ALICE), 'streaming_respostas', id);
+    const base = { uid: ALICE, mes: '2026-10', tv: { max: 'pouco' }, atualizadoEm: serverTimestamp() };
+    await assertFails(setDoc(ref, { ...base, tv: { max: 'muito' } }));
+    await assertFails(setDoc(ref, { ...base, tv: { tidal: 'pouco' } }));
+    await assertFails(setDoc(ref, { ...base, mes: '2026-11' }));
+    await assertFails(setDoc(ref, { ...base, mes: '10/2026' }));
+    await assertFails(setDoc(ref, { ...base, horas: 999 }));
+    await assertFails(setDoc(ref, { ...base, atualizadoEm: Timestamp.fromDate(new Date('2020-01-01')) }));
+    await assertFails(setDoc(doc(db(ALICE), 'streaming_respostas', `${BOB}_2026-10`), { ...base }));
+    await assertSucceeds(setDoc(ref, base));
+    await assertSucceeds(deleteDoc(ref));
+  });
+
+  it('streaming_uso: dono lê e apaga o seu; ninguém grava pelo app', async () => {
+    const id = `${ALICE}_2026-11`;
+    const uso = { uid: ALICE, mes: '2026-11', dias: { '11': { netflix: 42 } }, atualizadoEm: 'x' };
+    await assertSucceeds(getDoc(doc(db(ALICE), 'streaming_uso', id)));
+    await seed(async (d) => { await setDoc(doc(d, 'streaming_uso', id), uso); });
+    await assertSucceeds(getDoc(doc(db(ALICE), 'streaming_uso', id)));
+    await assertSucceeds(getDocs(query(collection(db(ALICE), 'streaming_uso'), where('uid', '==', ALICE))));
+    await assertFails(getDoc(doc(db(EVE), 'streaming_uso', id)));
+    await assertFails(getDocs(query(collection(db(EVE), 'streaming_uso'), where('uid', '==', ALICE))));
+    await assertFails(setDoc(doc(db(ALICE), 'streaming_uso', id), { ...uso, dias: { '11': { netflix: 999 } } }));
+    await assertFails(setDoc(doc(db(ALICE), 'streaming_uso', `${ALICE}_2026-12`), uso));
+    await assertFails(deleteDoc(doc(db(EVE), 'streaming_uso', id)));
+    await assertSucceeds(deleteDoc(doc(db(ALICE), 'streaming_uso', id)));
+  });
+
+  it('streaming_extensao: dono lê e apaga; ninguém grava pelo app', async () => {
+    await seed(async (d) => { await setDoc(doc(d, 'streaming_extensao', ALICE), { vinculada: true, ultimoEnvio: null }); });
+    await assertSucceeds(getDoc(doc(db(ALICE), 'streaming_extensao', ALICE)));
+    await assertFails(getDoc(doc(db(EVE), 'streaming_extensao', ALICE)));
+    await assertFails(setDoc(doc(db(ALICE), 'streaming_extensao', ALICE), { vinculada: true }));
+    await assertFails(deleteDoc(doc(db(EVE), 'streaming_extensao', ALICE)));
+    await assertSucceeds(deleteDoc(doc(db(ALICE), 'streaming_extensao', ALICE)));
+  });
+
+  it('códigos e chaves da extensão: inacessíveis pelo app', async () => {
+    await assertFails(getDoc(doc(db(ALICE), 'extensoes_codigos', '123456')));
+    await assertFails(setDoc(doc(db(ALICE), 'extensoes_codigos', '123456'), { uid: ALICE, expiraEm: 0 }));
+    await assertFails(getDocs(collection(db(ALICE), 'extensoes_tokens')));
+    await assertFails(setDoc(doc(db(ALICE), 'extensoes_tokens', 'abc'), { uid: ALICE }));
+  });
+
+  it('respostas: aceita os serviços de música e o YouTube', async () => {
+    const ref = doc(db(ALICE), 'streaming_respostas', `${ALICE}_2026-11`);
+    await assertSucceeds(setDoc(ref, { uid: ALICE, mes: '2026-11', tv: { spotify: 'bastante', youtube: 'pouco', deezer: 'nao' }, atualizadoEm: serverTimestamp() }));
+    await assertFails(setDoc(ref, { uid: ALICE, mes: '2026-11', tv: { tidal: 'pouco' }, atualizadoEm: serverTimestamp() }));
+  });
+
+  it('streaming_nomes: cada um renomeia só as suas conexões', async () => {
+    const itemId = '11111111-2222-4333-8444-555555555555';
+    const id = `${ALICE}_${itemId}`;
+    const nome = { uid: ALICE, itemId, nome: 'Cartão Mercado Pago', atualizadoEm: serverTimestamp() };
+    await assertSucceeds(getDoc(doc(db(ALICE), 'streaming_nomes', id)));
+    await assertSucceeds(setDoc(doc(db(ALICE), 'streaming_nomes', id), nome));
+    await assertSucceeds(getDocs(query(collection(db(ALICE), 'streaming_nomes'), where('uid', '==', ALICE))));
+    await assertFails(getDoc(doc(db(EVE), 'streaming_nomes', id)));
+    await assertFails(setDoc(doc(db(EVE), 'streaming_nomes', id), { ...nome, uid: EVE }));
+    await assertFails(setDoc(doc(db(ALICE), 'streaming_nomes', id), { ...nome, nome: '' }));
+    await assertFails(setDoc(doc(db(ALICE), 'streaming_nomes', id), { ...nome, nome: 'x'.repeat(41) }));
+    await assertFails(setDoc(doc(db(ALICE), 'streaming_nomes', id), { ...nome, itemId: 'outro' }));
+    await assertFails(setDoc(doc(db(ALICE), 'streaming_nomes', id), { ...nome, saldo: 100 }));
+    await assertFails(deleteDoc(doc(db(EVE), 'streaming_nomes', id)));
+    await assertSucceeds(deleteDoc(doc(db(ALICE), 'streaming_nomes', id)));
+  });
+});

@@ -1,0 +1,48 @@
+{
+  "manifest_version": 3,
+  "name": "SUSTENTA Streaming",
+  "short_name": "SUSTENTA",
+  "version": "1.1.0",
+  "description": "Mede só o tempo com vídeo ou música tocando (Netflix, Disney+, HBO Max, Prime Video, YouTube, Spotify e Deezer) e envia o total por dia ao SUSTENTA. Sem títulos, sem histórico.",
+  "icons": {
+    "16": "icones/16.png",
+    "48": "icones/48.png",
+    "128": "icones/128.png"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "SUSTENTA Streaming"
+  },
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "permissions": [
+    "storage",
+    "alarms"
+  ],
+  "host_permissions": [
+    "http://localhost:5173/*",
+    "https://*.netlify.app/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": [
+        "https://www.netflix.com/*",
+        "https://www.disneyplus.com/*",
+        "https://play.max.com/*",
+        "https://play.hbomax.com/*",
+        "https://www.primevideo.com/*",
+        "https://www.amazon.com.br/gp/video/*",
+        "https://www.youtube.com/*",
+        "https://music.youtube.com/*",
+        "https://open.spotify.com/*",
+        "https://www.deezer.com/*"
+      ],
+      "js": [
+        "content.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ]
+}

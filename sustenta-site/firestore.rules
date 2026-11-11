@@ -197,7 +197,7 @@ service cloud.firestore {
       function validDicasDoDia(x) {
         return x is map
           && x.keys().hasOnly(['data', 'respostas'])
-          && x.data is string && x.data.size() == 10
+          && x.data is string && x.data.matches('^20[0-9]{2}-[0-9]{2}-[0-9]{2}$')
           && x.respostas is map && x.respostas.size() <= 10;
       }
 
@@ -205,7 +205,7 @@ service cloud.firestore {
       function validMissoesFamilia(x) {
         return x is map
           && x.keys().hasOnly(['semana', 'resgatadas'])
-          && x.semana is string && x.semana.size() == 10
+          && x.semana is string && x.semana.matches('^20[0-9]{2}-[0-9]{2}-[0-9]{2}$')
           && x.resgatadas is list && x.resgatadas.size() <= 10;
       }
 
@@ -214,7 +214,7 @@ service cloud.firestore {
         return x is map
           && x.keys().hasOnly(['participa', 'semana', 'base'])
           && x.participa is bool
-          && x.semana is string && x.semana.size() == 10
+          && x.semana is string && x.semana.matches('^20[0-9]{2}-[0-9]{2}-[0-9]{2}$')
           && x.base is number && x.base >= 0 && x.base <= 100000000;
       }
 
@@ -331,10 +331,93 @@ service cloud.firestore {
         && incoming().keys().hasOnly(['uid', 'nome', 'semana', 'xp', 'updatedAt'])
         && incoming().uid == uid
         && shortString(incoming().nome, 80)
-        && incoming().semana is string && incoming().semana.size() == 10
+        && incoming().semana is string && incoming().semana.matches('^20[0-9]{2}-[0-9]{2}-[0-9]{2}$')
         && xpDeltaOk('xp', 1000);
       allow delete: if isSelf(uid);
     }
+
+    // ---------- streaming/{uid} ----------
+    // SUSTENTA Streaming: assinaturas detectadas pelo servidor via Open Finance.
+    // Só o servidor grava (Admin SDK, que não passa por estas regras); assim
+    // ninguém consegue forjar uma conexão ou assinatura. O dono lê e pode apagar
+    // (LGPD: excluir conta).
+    match /streaming/{uid} {
+      allow read: if isSelf(uid);
+      allow create, update: if false;
+      allow delete: if isSelf(uid);
+    }
+
+    // ---------- streaming_respostas/{id} ----------
+    // Resposta da pergunta "você assistiu pela TV?", uma por mês.
+    // id = "{uid}_{AAAA-MM}". Cada um lê e escreve só as suas.
+    match /streaming_respostas/{id} {
+      function validResposta(tv, servico) {
+        return !(servico in tv) || tv[servico] in ['nao', 'pouco', 'bastante'];
+      }
+
+      function validRespostas(d) {
+        return d.keys().hasOnly(['uid', 'mes', 'tv', 'atualizadoEm'])
+          && d.uid == request.auth.uid
+          && d.mes is string && d.mes.matches('^20[0-9]{2}-(0[1-9]|1[0-2])$')
+          && id == request.auth.uid + '_' + d.mes
+          && d.tv is map
+          && d.tv.keys().hasOnly(['netflix', 'disney', 'max', 'prime', 'youtube', 'spotify', 'deezer'])
+          && validResposta(d.tv, 'netflix')
+          && validResposta(d.tv, 'disney')
+          && validResposta(d.tv, 'max')
+          && validResposta(d.tv, 'prime')
+          && validResposta(d.tv, 'youtube')
+          && validResposta(d.tv, 'spotify')
+          && validResposta(d.tv, 'deezer')
+          && d.atualizadoEm == request.time;
+      }
+
+      allow get: if signedIn() && id.split('_')[0] == request.auth.uid;
+      allow list: if signedIn() && resource.data.uid == request.auth.uid;
+      allow create: if signedIn() && validRespostas(incoming());
+      allow update: if signedIn() && existing().uid == request.auth.uid && validRespostas(incoming());
+      allow delete: if signedIn() && existing().uid == request.auth.uid;
+    }
+
+    // ---------- streaming_nomes/{id} ----------
+    // Nome que a pessoa deu a uma conexão de banco (ex.: "Cartão Mercado Pago").
+    // id = "{uid}_{itemId}". Cada um lê e escreve só os seus.
+    match /streaming_nomes/{id} {
+      function validNome(d) {
+        return d.keys().hasOnly(['uid', 'itemId', 'nome', 'atualizadoEm'])
+          && d.uid == request.auth.uid
+          && d.itemId is string && d.itemId.matches('^[0-9a-fA-F-]{36}$')
+          && id == request.auth.uid + '_' + d.itemId
+          && d.nome is string && d.nome.size() >= 1 && d.nome.size() <= 40
+          && d.atualizadoEm == request.time;
+      }
+
+      allow get: if signedIn() && id.split('_')[0] == request.auth.uid;
+      allow list: if signedIn() && resource.data.uid == request.auth.uid;
+      allow create: if signedIn() && validNome(incoming());
+      allow update: if signedIn() && existing().uid == request.auth.uid && validNome(incoming());
+      allow delete: if signedIn() && existing().uid == request.auth.uid;
+    }
+
+    // ---------- streaming_uso/{id} ----------
+    // Minutos por dia medidos pela extensão do navegador. id = "{uid}_{AAAA-MM}".
+    // Só o servidor grava (função streaming-extensao). O dono lê e pode apagar.
+    match /streaming_uso/{id} {
+      allow get: if signedIn() && id.split('_')[0] == request.auth.uid;
+      allow list: if signedIn() && resource.data.uid == request.auth.uid;
+      allow create, update: if false;
+      allow delete: if signedIn() && resource.data.uid == request.auth.uid;
+    }
+
+    // ---------- streaming_extensao/{uid} ----------
+    // Situação da extensão (vinculada, último envio). Só o servidor grava.
+    match /streaming_extensao/{uid} {
+      allow read: if isSelf(uid);
+      allow create, update: if false;
+      allow delete: if isSelf(uid);
+    }
+
+    // extensoes_codigos e extensoes_tokens: só o servidor usa (regra final nega tudo).
 
     // ---------- noticias_cache/{categoria} ----------
     // Escrita bloqueada para clientes (evita "envenenar" o cache de todos).

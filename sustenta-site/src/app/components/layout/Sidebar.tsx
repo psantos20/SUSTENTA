@@ -2,7 +2,7 @@ import React from 'react';
 import {
   House, Wallet, BarChart3, Flame,
   MapPin, FileText, User, Leaf,
-  LogOut, BookOpen, Trophy, History as HistoryIcon
+  LogOut, BookOpen, Trophy, History as HistoryIcon, Tv
 } from 'lucide-react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -36,6 +36,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       items: [
         { id: 'dashboard',   label: 'Painel',   icon: House     },
         { id: 'consumption', label: 'Gastos',   icon: Wallet    },
+        { id: 'subscriptions', label: 'Assinaturas', icon: Tv },
         { id: 'analysis',    label: 'Análises', icon: BarChart3 },
       ],
     },

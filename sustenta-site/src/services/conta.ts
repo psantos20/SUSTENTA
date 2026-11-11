@@ -8,6 +8,7 @@ import {
 import { collection, deleteDoc, doc, getDoc, getDocs, query, where, writeBatch } from 'firebase/firestore';
 import { auth, db } from './firebase';
 import { excluirGrupo, sairDoGrupo } from './familia';
+import { desconectarBanco, desvincularExtensoes } from './assinaturas';
 
 /** Pede a senha (ou o Google) de novo antes de ações sensíveis. */
 export async function reautenticar(senha?: string) {
@@ -32,12 +33,17 @@ export async function exportarMeusDados(): Promise<void> {
   const user = auth.currentUser;
   if (!user) throw new Error('Não autenticado');
 
-  const [perfil, habitos, ranking, rankingSemanal, registros] = await Promise.all([
+  const [perfil, habitos, ranking, rankingSemanal, registros, streaming, respostasStreaming, usoStreaming, extensao, nomesBancos] = await Promise.all([
     getDoc(doc(db, 'usuarios', user.uid)),
     getDoc(doc(db, 'habitos_usuarios', user.uid)),
     getDoc(doc(db, 'ranking_educacao', user.uid)),
     getDoc(doc(db, 'ranking_semanal', user.uid)),
     getDocs(query(collection(db, 'registros'), where('uid', '==', user.uid))),
+    getDoc(doc(db, 'streaming', user.uid)),
+    getDocs(query(collection(db, 'streaming_respostas'), where('uid', '==', user.uid))),
+    getDocs(query(collection(db, 'streaming_uso'), where('uid', '==', user.uid))),
+    getDoc(doc(db, 'streaming_extensao', user.uid)),
+    getDocs(query(collection(db, 'streaming_nomes'), where('uid', '==', user.uid))),
   ]);
 
   const dados = {
@@ -48,6 +54,11 @@ export async function exportarMeusDados(): Promise<void> {
     ranking: ranking.data() ?? null,
     rankingSemanal: rankingSemanal.data() ?? null,
     registros: registros.docs.map((d) => ({ id: d.id, ...d.data() })),
+    streaming: streaming.data() ?? null,
+    streamingRespostas: respostasStreaming.docs.map((d) => ({ id: d.id, ...d.data() })),
+    streamingUso: usoStreaming.docs.map((d) => ({ id: d.id, ...d.data() })),
+    streamingExtensao: extensao.data() ?? null,
+    streamingNomesBancos: nomesBancos.docs.map((d) => ({ id: d.id, ...d.data() })),
   };
 
   const blob = new Blob([JSON.stringify(dados, null, 2)], { type: 'application/json' });
@@ -90,7 +101,31 @@ export async function excluirConta(senha?: string): Promise<void> {
     await lote.commit();
   }
 
-  // 3. Demais documentos do usuário
+  // 3. Assinaturas de streaming: revoga a conexão com o banco (Pluggy), desvincula as extensões e apaga os dados.
+  try {
+    await desconectarBanco();
+  } catch {
+    // Sem banco conectado ou servidor sem Open Finance: apaga só os documentos.
+  }
+  try {
+    await desvincularExtensoes();
+  } catch {
+    // Nenhuma extensão vinculada: segue.
+  }
+  const [respostasStreaming, usoStreaming, nomesStreaming] = await Promise.all([
+    getDocs(query(collection(db, 'streaming_respostas'), where('uid', '==', user.uid))),
+    getDocs(query(collection(db, 'streaming_uso'), where('uid', '==', user.uid))),
+    getDocs(query(collection(db, 'streaming_nomes'), where('uid', '==', user.uid))),
+  ]);
+  await Promise.all([
+    ...respostasStreaming.docs.map((d) => deleteDoc(d.ref)),
+    ...usoStreaming.docs.map((d) => deleteDoc(d.ref)),
+    ...nomesStreaming.docs.map((d) => deleteDoc(d.ref)),
+    deleteDoc(doc(db, 'streaming', user.uid)),
+    deleteDoc(doc(db, 'streaming_extensao', user.uid)),
+  ]);
+
+  // 4. Demais documentos do usuário
   await Promise.all([
     deleteDoc(doc(db, 'habitos_usuarios', user.uid)),
     deleteDoc(doc(db, 'ranking_educacao', user.uid)),
@@ -98,7 +133,7 @@ export async function excluirConta(senha?: string): Promise<void> {
   ]);
   await deleteDoc(doc(db, 'usuarios', user.uid));
 
-  // 4. Conta de login
+  // 5. Conta de login
   await deleteUser(user);
 
   try {

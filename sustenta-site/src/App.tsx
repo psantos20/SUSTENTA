@@ -12,6 +12,7 @@ import { useFeedback } from './app/contexts/FeedbackContext';
 // quando a pessoa abre a tela (o primeiro carregamento fica bem menor).
 const DashboardPage = React.lazy(() => import('./app/pages/DashboardPage').then((m) => ({ default: m.DashboardPage })));
 const ConsumptionPage = React.lazy(() => import('./app/pages/ConsumptionPage').then((m) => ({ default: m.ConsumptionPage })));
+const SubscriptionsPage = React.lazy(() => import('./app/pages/SubscriptionsPage').then((m) => ({ default: m.SubscriptionsPage })));
 const ProfilePage = React.lazy(() => import('./app/pages/ProfilePage').then((m) => ({ default: m.ProfilePage })));
 const AnalysisPage = React.lazy(() => import('./app/pages/AnalysisPage').then((m) => ({ default: m.AnalysisPage })));
 const HabitsPage = React.lazy(() => import('./app/pages/Habitspage').then((m) => ({ default: m.HabitsPage })));
@@ -43,6 +44,7 @@ import {
 function PageContent({ page, onNavigate }: { page: Page; onNavigate: (p: string) => void }) {
   if (page === 'dashboard')   return <DashboardPage onNavigate={onNavigate} />;
   if (page === 'consumption') return <ConsumptionPage />;
+  if (page === 'subscriptions') return <SubscriptionsPage />;
   if (page === 'profile')     return <ProfilePage />;
   if (page === 'analysis')    return <AnalysisPage />;
   if (page === 'habits')      return <HabitsPage />;

@@ -6,6 +6,7 @@
 export const ROTAS_APP = {
   dashboard: '/painel',
   consumption: '/consumo',
+  subscriptions: '/assinaturas',
   analysis: '/analise',
   habits: '/habitos',
   history: '/historico',
@@ -29,6 +30,7 @@ export type PagePublica = keyof typeof ROTAS_PUBLICAS;
 export const TITULOS_APP: Record<Page, string> = {
   dashboard: 'Painel',
   consumption: 'Consumo',
+  subscriptions: 'Assinaturas',
   analysis: 'Análise',
   habits: 'Hábitos',
   history: 'Histórico',

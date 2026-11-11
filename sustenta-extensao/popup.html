@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <title>SUSTENTA Streaming</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <header>
+      <img src="icones/48.png" alt="" width="28" height="28" />
+      <strong>SUSTENTA</strong>
+      <span id="selo" class="selo">…</span>
+    </header>
+
+    <section id="vincular" hidden>
+      <p class="texto">Digite o código de 6 dígitos gerado no SUSTENTA, em <b>Assinaturas → Conectar fontes</b>.</p>
+      <form id="form-codigo">
+        <input id="codigo" inputmode="numeric" autocomplete="off" maxlength="7" placeholder="000 000" aria-label="Código de vinculação" />
+        <button type="submit" class="primario" id="btn-vincular">Vincular</button>
+      </form>
+    </section>
+
+    <section id="vinculada" hidden>
+      <div id="agora" class="agora"></div>
+      <p class="rotulo">HOJE</p>
+      <ul id="lista"></ul>
+      <div class="botoes">
+        <button id="btn-pausar" class="secundario"></button>
+        <button id="btn-enviar" class="fantasma">Enviar agora</button>
+      </div>
+      <p id="envio" class="suave"></p>
+      <button id="btn-desvincular" class="link">Desvincular este navegador</button>
+    </section>
+
+    <p id="mensagem" class="mensagem" role="status" hidden></p>
+    <footer>Envia só os minutos por dia. Nada de títulos, endereços ou histórico.</footer>
+    <script type="module" src="popup.js"></script>
+  </body>
+</html>
